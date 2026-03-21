@@ -8,6 +8,32 @@ export default function SettingsModal({ moi, onSauvegarde, onDeconnexion, onFerm
   const [avatar, setAvatar]   = useState(moi.avatar_emoji)
   const [chargement, setChargement] = useState(false)
 
+  async function exporterDonnees() {
+    const token = localStorage.getItem('oria_token')
+    const r = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/me/export`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (r.ok) {
+      const data = await r.json()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = 'mes-donnees-oria.json'; a.click()
+      URL.revokeObjectURL(url)
+    }
+  }
+
+  async function supprimerCompte() {
+    if (!confirm('Supprimer définitivement votre compte ? Cette action est irréversible.')) return
+    const token = localStorage.getItem('oria_token')
+    const r = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/me`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (r.ok) {
+      onDeconnexion()
+    }
+  }
+
   async function sauvegarder(e) {
     e.preventDefault()
     if (!nom.trim()) return
@@ -55,6 +81,17 @@ export default function SettingsModal({ moi, onSauvegarde, onDeconnexion, onFerm
             </button>
             <button type="button" className="btn-danger" onClick={onDeconnexion}>
               Se déconnecter
+            </button>
+          </div>
+
+          {/* RGPD */}
+          <div style={{ marginTop: 20, borderTop: '1px solid #383a40', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <p style={{ fontSize: 11, color: '#72767d', margin: '0 0 8px' }}>Données personnelles (RGPD)</p>
+            <button type="button" className="btn-secondary" onClick={exporterDonnees}>
+              📤 Exporter mes données
+            </button>
+            <button type="button" className="btn-danger" onClick={supprimerCompte} style={{ fontSize: 12 }}>
+              🗑 Supprimer mon compte
             </button>
           </div>
         </form>

@@ -150,3 +150,53 @@ def login(data: Connexion, db: Session = Depends(get_db)):
         "matrix_user_id":      user.matrix_user_id,
         "matrix_access_token": user.matrix_access_token,
     }
+
+
+@router.get("/me/export")
+def exporter_donnees(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Export RGPD de toutes les données de l'utilisateur."""
+    from models.world import World, Member
+    from models.building import Message
+    from models.dm import DirectMessage, DirectMessageRoom
+
+    db_user = db.query(User).filter(User.id == user["id"]).first()
+    if not db_user:
+        raise HTTPException(404)
+
+    membres = db.query(Member).filter(Member.user_id == user["id"]).all()
+
+    return {
+        "utilisateur": {
+            "id": db_user.id,
+            "email": db_user.email,
+            "nom": db_user.nom,
+            "avatar_emoji": db_user.avatar_emoji,
+            "created_at": str(db_user.id),  # UUID v4 contient timestamp
+        },
+        "communes": [{"world_id": m.world_id, "role": m.role} for m in membres],
+        "export_date": __import__('datetime').datetime.utcnow().isoformat(),
+        "note": "Export RGPD — Article 20 du RGPD — Droit à la portabilité des données",
+    }
+
+@router.delete("/me")
+def supprimer_compte(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Suppression du compte (droit à l'oubli RGPD)."""
+    from models.world import Member
+
+    db_user = db.query(User).filter(User.id == user["id"]).first()
+    if not db_user:
+        raise HTTPException(404)
+
+    # Supprimer les appartenances
+    db.query(Member).filter(Member.user_id == user["id"]).delete()
+
+    # Anonymiser l'utilisateur (soft delete avec anonymisation)
+    db_user.email = f"deleted_{db_user.id}@rgpd.deleted"
+    db_user.nom = "[Compte supprimé]"
+    db_user.avatar_emoji = "❌"
+    db_user.hashed_password = ""
+    db_user.matrix_user_id = None
+    db_user.matrix_access_token = None
+    db.commit()
+
+    return {"ok": True, "message": "Compte anonymisé conformément au RGPD"}

@@ -12,8 +12,11 @@ from typing import Optional
 from datetime import datetime
 import os, shutil, uuid
 
+import logging
 from database import get_db
 from routers.auth import get_current_user
+
+logger = logging.getLogger(__name__)
 from models.world import World, Member
 from models.building import Building
 from models.mairie import (
@@ -246,6 +249,30 @@ def creer_conseil(body: ConseilIn, db: Session = Depends(get_db), user=Depends(g
     if not _is_admin(db, body.world_id, user["id"]): raise HTTPException(403)
     c = ConseilMunicipal(**body.dict(), created_by=user["id"])
     db.add(c); db.commit(); db.refresh(c)
+
+    # Convocation automatique dans le canal principal
+    try:
+        from models.building import Room
+        rooms_world = db.query(Room).join(Building, Room.building_id == Building.id)\
+            .filter(Building.world_id == body.world_id)\
+            .filter(Room.matrix_room_id != None)\
+            .filter(Room.type.in_(["texte", "broadcast", "mixte"]))\
+            .first()
+        if rooms_world and rooms_world.matrix_room_id:
+            import services.matrix_service as matrix
+            creator = db.query(__import__('models.user', fromlist=['User']).User).get(user["id"])
+            if creator and creator.matrix_user_id:
+                msg = (
+                    f"📢 CONVOCATION — Conseil municipal\n"
+                    f"📅 Date : {body.date_conseil}\n"
+                    f"🕐 Heure : {body.heure}\n"
+                    f"📍 Lieu : {body.lieu}\n"
+                    f"\nOrdre du jour :\n{body.ordre_du_jour or '(à définir)'}"
+                )
+                matrix.send_message(rooms_world.matrix_room_id, creator.matrix_user_id, msg)
+    except Exception as e:
+        logger.warning(f"Convocation auto échouée : {e}")
+
     return _conseil_dict(c)
 
 @conseils_router.get("/world/{world_id}")

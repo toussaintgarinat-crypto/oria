@@ -196,6 +196,24 @@ def set_presence(mxid: str, presence: str, status_msg: str = "") -> None:
         logger.error(f"Erreur set_presence {mxid}: {e}")
 
 
+def send_message(matrix_room_id: str, sender_mxid: str, text: str) -> bool:
+    """Envoie un message texte dans une room Matrix."""
+    import time
+    txn_id = f"oria_{int(time.time() * 1000)}"
+    try:
+        with httpx.Client(timeout=TIMEOUT) as client:
+            resp = client.put(
+                f"{MATRIX_URL}/_matrix/client/v3/rooms/{matrix_room_id}/send/m.room.message/{txn_id}",
+                params={"user_id": sender_mxid},
+                headers=_headers_as(),
+                json={"msgtype": "m.text", "body": text},
+            )
+            return resp.status_code == 200
+    except Exception as e:
+        logger.error(f"Erreur send_message {matrix_room_id}: {e}")
+        return False
+
+
 # ─── Health check ─────────────────────────────────────────────────────────────
 
 def is_synapse_available() -> bool:

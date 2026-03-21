@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import LoginScreen from './components/LoginScreen.jsx'
 import MainLayout from './components/MainLayout.jsx'
+import PortailCitoyen from './components/PortailCitoyen.jsx'
 import { initMatrixClient, startMatrixClient, stopMatrixClient } from './services/matrixClient.js'
 
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -84,6 +85,14 @@ export default function App() {
     localStorage.removeItem('matrix_token')
     stopMatrixClient()
     setMoi(null)
+  }
+
+  // Portail public citoyen (/portail?commune=WORLD_ID)
+  const isPortail = window.location.pathname === '/portail' || window.location.pathname.startsWith('/portail/')
+  if (isPortail) {
+    const params = new URLSearchParams(window.location.search)
+    const communeId = params.get('commune')
+    return <PortailCitoyen communeId={communeId} />
   }
 
   if (!moi) return <LoginScreen onConnexion={connecter} />

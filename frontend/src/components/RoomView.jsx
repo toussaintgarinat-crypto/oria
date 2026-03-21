@@ -208,17 +208,23 @@ export default function RoomView({ room, building, world, moi, onQuitter }) {
             <div ref={basRef} />
           </div>
 
-          <form className="room-input" onSubmit={envoyer}>
-            <button type="button" className="btn-upload" onClick={() => fileRef.current?.click()} title="Envoyer un fichier">📎</button>
-            <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={uploaderFichier} />
-            <input
-              value={texte}
-              onChange={e => setTexte(e.target.value)}
-              placeholder={`Message dans ${room.nom}`}
-              autoFocus
-            />
-            <button type="submit">↑</button>
-          </form>
+          {room.type === 'broadcast' && world?.owner_id !== moi?.id ? (
+            <div className="broadcast-locked">
+              <span>📢</span> Canal en lecture seule — seul le maire peut écrire ici
+            </div>
+          ) : (
+            <form className="room-input" onSubmit={envoyer}>
+              <button type="button" className="btn-upload" onClick={() => fileRef.current?.click()} title="Envoyer un fichier">📎</button>
+              <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={uploaderFichier} />
+              <input
+                value={texte}
+                onChange={e => setTexte(e.target.value)}
+                placeholder={`Message dans ${room.nom}`}
+                autoFocus
+              />
+              <button type="submit">↑</button>
+            </form>
+          )}
         </>
       )}
     </div>

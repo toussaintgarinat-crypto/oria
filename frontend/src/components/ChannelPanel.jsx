@@ -290,7 +290,7 @@ function BuildingSection({
       {!isCollapsed && (
         <div className="channel-rooms">
           {rooms.map(room => {
-            const icone = room.type === 'vocal' ? '🔊' : room.type === 'texte' ? '💬' : '⚡'
+            const icone = room.type === 'vocal' ? '🔊' : room.type === 'texte' ? '💬' : room.type === 'broadcast' ? '📢' : '⚡'
             const actif = roomActiveIds?.has(room.id)
             const unread = room.matrix_room_id ? (unreadCounts?.[room.matrix_room_id] || 0) : 0
             return (

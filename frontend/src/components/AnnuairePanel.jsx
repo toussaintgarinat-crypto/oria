@@ -8,6 +8,7 @@ export default function AnnuairePanel({ world, moi, onFermer }) {
   const [items, setItems] = useState([])
   const [filtre, setFiltre] = useState('')
   const [form, setForm] = useState(null)
+  const [vue, setVue] = useState('liste') // 'liste' | 'organigramme'
   const isAdmin = world?.owner_id === moi?.id
 
   useEffect(() => { charger() }, [world?.id, filtre])
@@ -47,6 +48,9 @@ export default function AnnuairePanel({ world, moi, onFermer }) {
       <div className="mairie-panel-header">
         <div className="mairie-panel-title"><span>👥</span><h2>Annuaire agents & élus</h2></div>
         <div className="mairie-panel-actions">
+          <button className={`mairie-filter-btn ${vue === 'organigramme' ? 'actif' : ''}`} onClick={() => setVue(v => v === 'organigramme' ? 'liste' : 'organigramme')}>
+            🌳 Organigramme
+          </button>
           {isAdmin && <button className="mairie-btn-primary" onClick={() => setForm({})}>＋ Ajouter</button>}
           <button className="mairie-btn-close" onClick={onFermer}>✕</button>
         </div>
@@ -59,7 +63,41 @@ export default function AnnuairePanel({ world, moi, onFermer }) {
         ))}
       </div>
 
-      <div className="mairie-annuaire-grid">
+      {vue === 'organigramme' && (() => {
+        const parService = {}
+        items.forEach(a => {
+          const svc = a.service || '— (sans service)'
+          if (!parService[svc]) parService[svc] = []
+          parService[svc].push(a)
+        })
+        return (
+          <div className="mairie-organigramme">
+            {Object.entries(parService).map(([svc, agents]) => (
+              <div key={svc} className="mairie-org-service">
+                <div className="mairie-org-service-header">
+                  <span>🏢</span> {svc}
+                  <span className="mairie-org-count">{agents.length}</span>
+                </div>
+                <div className="mairie-org-agents">
+                  {agents.map(a => (
+                    <div key={a.id} className="mairie-org-agent">
+                      <div className="mairie-org-agent-avatar" style={{ background: TYPE_COLORS[a.type_poste] || '#4e5058' }}>
+                        {a.prenom[0]}{a.nom[0]}
+                      </div>
+                      <div>
+                        <div className="mairie-org-agent-nom">{a.prenom} {a.nom}</div>
+                        <div className="mairie-org-agent-fn">{a.fonction || TYPES[a.type_poste]}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
+
+      <div className="mairie-annuaire-grid" style={{ display: vue === 'organigramme' ? 'none' : undefined }}>
         {items.length === 0 && <div className="mairie-empty">Annuaire vide</div>}
         {items.map(a => (
           <div key={a.id} className="mairie-agent-card">
