@@ -5,6 +5,7 @@ from database import engine, Base
 import models.world, models.building, models.user, models.quartier, models.dm, models.network
 import models.mairie
 import models.vote
+import models.llm_config
 from routers import worlds, buildings, rooms, tokens, auth, quartiers
 from routers import invitations, files as files_router, network as network_router
 from routers import matrix_as
@@ -22,6 +23,10 @@ def _migrate():
         ("arretes",        "workflow_statut","VARCHAR DEFAULT 'brouillon'"),
         ("tickets",        "lat",            "VARCHAR"),
         ("tickets",        "lng",            "VARCHAR"),
+        ("deliberations",  "reseau_visible", "BOOLEAN DEFAULT 0"),
+        ("arretes",        "reseau_visible", "BOOLEAN DEFAULT 0"),
+        ("users",          "totp_secret",    "VARCHAR"),
+        ("users",          "totp_enabled",   "VARCHAR DEFAULT 'false'"),
     ]
     with engine.connect() as conn:
         for table, col, typ in nouvelles_colonnes:
@@ -73,8 +78,14 @@ app.include_router(audit_router,         prefix="/api/audit",         tags=["Aud
 app.include_router(tableau_router,       prefix="/api/tableau-bord",  tags=["Tableau de bord"])
 from routers.vote_router import router as vote_router
 from routers.search_router import router as search_router
-app.include_router(vote_router,   prefix="/api/votes",  tags=["Votes"])
-app.include_router(search_router, prefix="/api/search", tags=["Recherche"])
+from routers.ai_router import router as ai_router
+from routers.reseau_router import router as reseau_router
+from routers.llm_config_router import router as llm_config_router
+app.include_router(vote_router,       prefix="/api/votes",      tags=["Votes"])
+app.include_router(search_router,     prefix="/api/search",     tags=["Recherche"])
+app.include_router(ai_router,         prefix="/api/ai",         tags=["IA Municipale"])
+app.include_router(reseau_router,     prefix="/api/reseau",     tags=["Intercommunalité"])
+app.include_router(llm_config_router, prefix="/api/llm-config", tags=["Config LLM"])
 # Application Service Matrix — montée sans préfixe /api (protocole Matrix)
 app.include_router(matrix_as.router, tags=["Matrix AS"])
 

@@ -14,3 +14,5 @@ class User(Base):
     matrix_user_id       = Column(String, nullable=True)   # "@oria_<uuid>:oria.local"
     matrix_access_token  = Column(String, nullable=True)
     matrix_provisioned   = Column(String, default="false") # "true" | "false" | "error"
+    totp_secret          = Column(String, nullable=True)
+    totp_enabled         = Column(String, default="false")  # "true" | "false"

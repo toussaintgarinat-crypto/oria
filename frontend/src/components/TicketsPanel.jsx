@@ -10,6 +10,8 @@ export default function TicketsPanel({ world, moi, onFermer }) {
   const [filtre, setFiltre] = useState('')
   const [detail, setDetail] = useState(null)
   const [reponse, setReponse] = useState('')
+  const [aiSuggestion, setAiSuggestion] = useState('')
+  const [aiChargement, setAiChargement] = useState(false)
 
   useEffect(() => { charger() }, [world?.id, filtre])
 
@@ -29,7 +31,18 @@ export default function TicketsPanel({ world, moi, onFermer }) {
     if (!reponse.trim()) return
     await mettreAJour(t.id, { reponse, statut: 'resolu' })
     setReponse('')
+    setAiSuggestion('')
     setDetail(null)
+  }
+
+  async function suggererAvecIA(t) {
+    setAiChargement(true)
+    const d = await api.post('/ai/suggest-ticket-response', { ticket_id: t.id, world_id: world.id })
+    setAiChargement(false)
+    if (d?.suggestion) {
+      setAiSuggestion(d.suggestion)
+      setReponse(d.suggestion)
+    }
   }
 
   return (
@@ -97,6 +110,17 @@ export default function TicketsPanel({ world, moi, onFermer }) {
               </div>
             )}
             <div className="mairie-ticket-reponse-form">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: '#72767d' }}>Réponse</span>
+                <button
+                  type="button"
+                  onClick={() => suggererAvecIA(detail)}
+                  disabled={aiChargement}
+                  style={{ fontSize: 11, padding: '2px 8px', background: '#5865F2', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                >
+                  {aiChargement ? '⏳' : '🤖 Suggestion IA'}
+                </button>
+              </div>
               <textarea value={reponse} onChange={e => setReponse(e.target.value)} placeholder="Répondre au citoyen..." rows={4} />
               <button className="mairie-btn-primary" onClick={() => envoyerReponse(detail)} disabled={!reponse.trim()}>
                 Envoyer la réponse & marquer résolu

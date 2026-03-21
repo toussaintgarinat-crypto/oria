@@ -8,6 +8,8 @@ export default function ConseilPanel({ world, moi, onFermer, onOuvrirVotes }) {
   const [items, setItems] = useState([])
   const [form, setForm] = useState(null)
   const [pvUploading, setPvUploading] = useState(null)
+  const [aiResume, setAiResume] = useState({}) // conseil_id → texte
+  const [aiChargement, setAiChargement] = useState(null)
   const isAdmin = world?.owner_id === moi?.id
 
   useEffect(() => { charger() }, [world?.id])
@@ -40,6 +42,13 @@ export default function ConseilPanel({ world, moi, onFermer, onOuvrirVotes }) {
     if (!confirm('Supprimer cette séance ?')) return
     await api.del(`/conseils/${c.id}`)
     charger()
+  }
+
+  async function resumerAvecIA(c) {
+    setAiChargement(c.id)
+    const d = await api.post('/ai/summarize-conseil', { conseil_id: c.id, world_id: world.id })
+    setAiChargement(null)
+    if (d?.resume) setAiResume(prev => ({ ...prev, [c.id]: d.resume }))
   }
 
   async function uploadPv(c, file) {
@@ -80,8 +89,24 @@ export default function ConseilPanel({ world, moi, onFermer, onOuvrirVotes }) {
             <div className="mairie-card-titre">📍 {c.lieu}</div>
             {c.ordre_du_jour && (
               <div className="mairie-card-odj">
-                <strong>Ordre du jour :</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong>Ordre du jour :</strong>
+                  <button
+                    onClick={() => resumerAvecIA(c)}
+                    disabled={aiChargement === c.id}
+                    style={{ fontSize: 11, padding: '2px 8px', background: '#5865F2', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                    title="Résumer avec l'IA"
+                  >
+                    {aiChargement === c.id ? '⏳' : '🤖 Résumer'}
+                  </button>
+                </div>
                 <pre>{c.ordre_du_jour}</pre>
+                {aiResume[c.id] && (
+                  <div style={{ marginTop: 8, padding: 10, background: '#1e2124', borderRadius: 6, borderLeft: '3px solid #5865F2', fontSize: 12, color: '#dcddde', lineHeight: 1.5 }}>
+                    <strong style={{ color: '#5865F2' }}>🤖 Résumé IA :</strong>
+                    <div style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{aiResume[c.id]}</div>
+                  </div>
+                )}
               </div>
             )}
             <div className="mairie-card-footer">

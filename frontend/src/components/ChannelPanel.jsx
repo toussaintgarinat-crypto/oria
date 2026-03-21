@@ -177,11 +177,19 @@ export default function ChannelPanel({
               <span>🔍</span> Journal d'audit
             </button>
           )}
+          {estProprietaire && (
+            <button className="channel-outil-btn" onClick={() => onOuvrirOutil?.('llm-config')}>
+              <span>🤖</span> Config IA
+            </button>
+          )}
           <button className="channel-outil-btn" onClick={() => onOuvrirOutil?.('search')}>
             <span>🔍</span> Recherche
           </button>
           <button className="channel-outil-btn" onClick={() => onOuvrirOutil?.('calendar')}>
             <span>📅</span> Calendrier
+          </button>
+          <button className="channel-outil-btn" onClick={() => onOuvrirOutil?.('reseau-docs')}>
+            <span>🏘</span> Réseau intercommunal
           </button>
         </div>
 

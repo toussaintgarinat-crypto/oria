@@ -21,6 +21,8 @@ import TableauBordMaire from './TableauBordMaire.jsx'
 import VotePanel from './VotePanel.jsx'
 import SearchPanel from './SearchPanel.jsx'
 import CalendarPanel from './CalendarPanel.jsx'
+import ReseauDocumentsPanel from './ReseauDocumentsPanel.jsx'
+import LLMConfigPanel from './LLMConfigPanel.jsx'
 import { useUnreadCounts } from '../hooks/useUnreadCounts.js'
 import { useUnreadDMCounts } from '../hooks/useUnreadDMCounts.js'
 
@@ -211,6 +213,10 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
     contenuPrincipal = <SearchPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} onNavigate={(section, item) => { setOutilActif(section === 'deliberations' ? 'deliberations' : section === 'arretes' ? 'arretes' : section === 'annuaire' ? 'annuaire' : section === 'tickets' ? 'tickets' : null) }} />
   } else if (outilActif === 'calendar') {
     contenuPrincipal = <CalendarPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (outilActif === 'reseau-docs') {
+    contenuPrincipal = <ReseauDocumentsPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (outilActif === 'llm-config') {
+    contenuPrincipal = <LLMConfigPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
   } else if (voteConseil) {
     contenuPrincipal = <VotePanel conseil={voteConseil} world={worldActif} moi={moi} onFermer={() => setVoteConseil(null)} />
   } else if (dmDestinataire) {

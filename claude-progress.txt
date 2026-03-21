@@ -2,7 +2,7 @@
    ORIA MAIRIE — JOURNAL DE BORD
 ═══════════════════════════════════════════════════════
 
-Dernière mise à jour : 2026-03-21 (session 2)
+Dernière mise à jour : 2026-03-21 (session 3)
 Stack : FastAPI + React 18 + Vite + LiveKit + SQLAlchemy + Matrix E2EE
 Repo  : https://github.com/toussaintgarinat-crypto/oria-mairie
 
@@ -46,6 +46,9 @@ PRIORITÉ HAUTE
 PRIORITÉ MOYENNE
 ✅ UI-002       Thème institutionnel (bleu République) — CSS mairie-panel
   AGENDA-003   Agenda commissions — out of scope v1
+✅ 2FA-001      Double auth TOTP — backend pyotp + auth endpoints + LoginScreen + SettingsModal
+✅ CHATBOT-001  Assistant IA municipal — httpx → Anthropic API, ResumerConseil + SuggestTicket
+✅ MULTI-COMMUNE-001 Intercommunalité renforcée — reseau_visible + /reseau/documents + ReseauDocumentsPanel
 ✅ ANNUAIRE-002 Organigramme dynamique — toggle liste/organigramme dans AnnuairePanel
 ✅ CITOYEN-003  Notifications publiques — backend + portail citoyen
 ✅ AUDIT-002    Export RGPD + droit à l'oubli — GET/DELETE /auth/me + SettingsModal
@@ -72,4 +75,11 @@ PRIORITÉ MOYENNE
   - UI-002 : palette institutionnelle #003189 + CSS mairie-panel complet
   - Navigation "Outils municipaux" dans ChannelPanel
   - Playwright : 7/7 tests passés
+
+[2026-03-21] Session 3 — V3 (2FA + Chatbot IA + Intercommunalité)
+  - 2FA-001 : pyotp ajouté aux requirements, colonnes totp_secret/totp_enabled, endpoints /auth/2fa/* (setup/enable/disable/status), login modifié pour requires_2fa flow, LoginScreen avec onglet 2fa, SettingsModal avec section 2FA
+  - CHATBOT-001 : ai_router.py avec POST /ai/summarize-conseil + /ai/suggest-ticket-response via httpx → Anthropic API (claude-haiku-4-5-20251001), bouton "🤖 Résumer" dans ConseilPanel, bouton "🤖 Suggestion IA" dans TicketsPanel
+  - MULTI-COMMUNE-001 : colonne reseau_visible sur deliberations+arretes, reseau_router.py avec GET /reseau/documents, ReseauDocumentsPanel.jsx, bouton "Réseau intercommunal" dans ChannelPanel, toggle partage dans DeliberationsPanel
+  - Build backend + restart, migrations DB auto (totp_secret, totp_enabled, reseau_visible x2)
+  - 7 nouveaux endpoints API : /auth/2fa/*, /ai/*, /reseau/documents
 

@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
 import os
+import pyotp
 import services.matrix_service as matrix
 
 router = APIRouter()
@@ -29,6 +30,7 @@ class Inscription(BaseModel):
 class Connexion(BaseModel):
     email: str
     password: str
+    totp_code: Optional[str] = None
 
 class MiseAJourProfil(BaseModel):
     nom: Optional[str] = None
@@ -143,6 +145,14 @@ def login(data: Connexion, db: Session = Depends(get_db)):
             user.matrix_provisioned  = "true"
             db.commit()
 
+    # Vérification 2FA si activé
+    if user.totp_enabled == "true" and user.totp_secret:
+        if not data.totp_code:
+            return {"requires_2fa": True}
+        totp = pyotp.TOTP(user.totp_secret)
+        if not totp.verify(data.totp_code, valid_window=1):
+            raise HTTPException(status_code=401, detail="Code 2FA incorrect")
+
     token = creer_token(user)
     return {
         "token": token,
@@ -150,6 +160,60 @@ def login(data: Connexion, db: Session = Depends(get_db)):
         "matrix_user_id":      user.matrix_user_id,
         "matrix_access_token": user.matrix_access_token,
     }
+
+
+# ─── 2FA ─────────────────────────────────────────────────────────────────────
+
+@router.post("/2fa/setup")
+def setup_2fa(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Génère un secret TOTP et retourne l'URI de provisionnement."""
+    db_user = db.query(User).filter(User.id == user["id"]).first()
+    if not db_user:
+        raise HTTPException(404)
+    secret = pyotp.random_base32()
+    db_user.totp_secret = secret
+    db.commit()
+    uri = pyotp.totp.TOTP(secret).provisioning_uri(
+        name=db_user.email,
+        issuer_name="Oria Mairie"
+    )
+    return {"secret": secret, "uri": uri}
+
+
+@router.post("/2fa/enable")
+def enable_2fa(code: str, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Vérifie le code TOTP et active le 2FA."""
+    db_user = db.query(User).filter(User.id == user["id"]).first()
+    if not db_user or not db_user.totp_secret:
+        raise HTTPException(400, "Setup 2FA requis avant l'activation")
+    totp = pyotp.TOTP(db_user.totp_secret)
+    if not totp.verify(code, valid_window=1):
+        raise HTTPException(400, "Code 2FA invalide")
+    db_user.totp_enabled = "true"
+    db.commit()
+    return {"ok": True, "message": "2FA activé"}
+
+
+@router.post("/2fa/disable")
+def disable_2fa(password: str, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Désactive le 2FA après vérification du mot de passe."""
+    db_user = db.query(User).filter(User.id == user["id"]).first()
+    if not db_user:
+        raise HTTPException(404)
+    if not pwd_context.verify(password, db_user.hashed_password):
+        raise HTTPException(401, "Mot de passe incorrect")
+    db_user.totp_enabled = "false"
+    db_user.totp_secret = None
+    db.commit()
+    return {"ok": True, "message": "2FA désactivé"}
+
+
+@router.get("/me/2fa-status")
+def get_2fa_status(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.id == user["id"]).first()
+    if not db_user:
+        raise HTTPException(404)
+    return {"totp_enabled": db_user.totp_enabled == "true"}
 
 
 @router.get("/me/export")

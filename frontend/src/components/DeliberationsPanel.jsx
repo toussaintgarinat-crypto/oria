@@ -154,6 +154,13 @@ export default function DeliberationsPanel({ world, moi, onFermer }) {
                       <option value="archive">Archiver</option>
                     </select>
                   )}
+                  <button
+                    onClick={() => api.patch(`/deliberations/${d.id}`, { reseau_visible: !d.reseau_visible }).then(() => charger())}
+                    title={d.reseau_visible ? 'Retirer du réseau intercommunal' : 'Partager au réseau intercommunal'}
+                    style={{ fontSize: 11, padding: '2px 6px', background: d.reseau_visible ? '#43B581' : '#4e5058', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                  >
+                    {d.reseau_visible ? '🏘 Partagé' : '🏘'}
+                  </button>
                   <button onClick={() => setForm(d)}>✎</button>
                   <button onClick={() => supprimer(d)}>🗑</button>
                 </div>

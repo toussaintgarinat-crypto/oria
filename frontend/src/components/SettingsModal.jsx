@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from '../services/api.js'
 
 const AVATARS = ['👤','🧑','👩','🧔','👨‍💻','👩‍💻','🧑‍🎨','👩‍🎤','🧑‍🚀','🦊','🐺','🐸']
@@ -7,6 +7,34 @@ export default function SettingsModal({ moi, onSauvegarde, onDeconnexion, onFerm
   const [nom, setNom]         = useState(moi.nom)
   const [avatar, setAvatar]   = useState(moi.avatar_emoji)
   const [chargement, setChargement] = useState(false)
+  const [totpEnabled, setTotpEnabled]   = useState(null) // null=chargement, true, false
+  const [totpUri, setTotpUri]           = useState(null) // URI provisionnement
+  const [totpSecret, setTotpSecret]     = useState(null)
+  const [totpCode, setTotpCode]         = useState('')
+  const [totpMsg, setTotpMsg]           = useState('')
+  const [desactivePass, setDesactivePass] = useState('')
+
+  useEffect(() => {
+    api.get('/auth/me/2fa-status').then(d => d && setTotpEnabled(d.totp_enabled))
+  }, [])
+
+  async function setup2fa() {
+    const d = await api.post('/auth/2fa/setup', {})
+    if (d?.uri) { setTotpUri(d.uri); setTotpSecret(d.secret); setTotpMsg('') }
+  }
+
+  async function enable2fa() {
+    const d = await api.post(`/auth/2fa/enable?code=${totpCode}`, {})
+    if (d?.ok) { setTotpEnabled(true); setTotpUri(null); setTotpCode(''); setTotpMsg('2FA activé ✅') }
+    else setTotpMsg(d?.detail || 'Code incorrect')
+  }
+
+  async function disable2fa() {
+    if (!desactivePass) return
+    const d = await api.post(`/auth/2fa/disable?password=${encodeURIComponent(desactivePass)}`, {})
+    if (d?.ok) { setTotpEnabled(false); setDesactivePass(''); setTotpMsg('2FA désactivé') }
+    else setTotpMsg(d?.detail || 'Mot de passe incorrect')
+  }
 
   async function exporterDonnees() {
     const token = localStorage.getItem('oria_token')
@@ -82,6 +110,45 @@ export default function SettingsModal({ moi, onSauvegarde, onDeconnexion, onFerm
             <button type="button" className="btn-danger" onClick={onDeconnexion}>
               Se déconnecter
             </button>
+          </div>
+
+          {/* 2FA */}
+          <div style={{ marginTop: 20, borderTop: '1px solid #383a40', paddingTop: 16 }}>
+            <p style={{ fontSize: 11, color: '#72767d', margin: '0 0 10px' }}>Double authentification (2FA)</p>
+            {totpEnabled === null && <p style={{ fontSize: 12, color: '#72767d' }}>Chargement…</p>}
+            {totpEnabled === true && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{ fontSize: 12, color: '#43B581', margin: 0 }}>🔐 2FA activé</p>
+                <input className="modal-input" type="password" placeholder="Mot de passe pour désactiver"
+                  value={desactivePass} onChange={e => setDesactivePass(e.target.value)} />
+                <button type="button" className="btn-danger" onClick={disable2fa} style={{ fontSize: 12 }}>
+                  Désactiver la 2FA
+                </button>
+                {totpMsg && <p style={{ fontSize: 12, color: '#FAA61A', margin: 0 }}>{totpMsg}</p>}
+              </div>
+            )}
+            {totpEnabled === false && !totpUri && (
+              <button type="button" className="btn-secondary" onClick={setup2fa}>
+                🔐 Activer la double authentification
+              </button>
+            )}
+            {totpEnabled === false && totpUri && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{ fontSize: 12, color: '#b9bbbe', margin: 0 }}>
+                  Scannez ce code avec Google Authenticator ou copiez la clé :
+                </p>
+                <code style={{ fontSize: 11, wordBreak: 'break-all', background: '#1e2124', padding: 8, borderRadius: 4, color: '#dcddde' }}>
+                  {totpSecret}
+                </code>
+                <input className="modal-input" type="text" placeholder="Code à 6 chiffres"
+                  value={totpCode} onChange={e => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  maxLength={6} style={{ letterSpacing: 4, textAlign: 'center' }} />
+                <button type="button" className="btn-primary" onClick={enable2fa} disabled={totpCode.length < 6}>
+                  Confirmer l'activation
+                </button>
+                {totpMsg && <p style={{ fontSize: 12, color: '#F04747', margin: 0 }}>{totpMsg}</p>}
+              </div>
+            )}
           </div>
 
           {/* RGPD */}

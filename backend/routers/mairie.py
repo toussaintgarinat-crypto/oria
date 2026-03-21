@@ -67,6 +67,7 @@ class DelibPatch(BaseModel):
     statut: Optional[str] = None
     objet: Optional[str] = None
     confidentiel: Optional[bool] = None
+    reseau_visible: Optional[bool] = None
 
 @deliberations_router.post("/")
 def creer_delib(body: DelibIn, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -153,6 +154,7 @@ def _delib_dict(d):
             "date_seance": d.date_seance, "statut": d.statut, "objet": d.objet,
             "confidentiel": d.confidentiel, "has_pdf": bool(d.file_path),
             "workflow_statut": d.workflow_statut,
+            "reseau_visible": bool(getattr(d, 'reseau_visible', False)),
             "created_by": d.created_by, "created_at": d.created_at.isoformat() if d.created_at else None}
 
 
@@ -174,6 +176,7 @@ class ArretePatch(BaseModel):
     date_arrete: Optional[str] = None
     objet: Optional[str] = None
     confidentiel: Optional[bool] = None
+    reseau_visible: Optional[bool] = None
 
 @arretes_router.post("/")
 def creer_arrete(body: ArreteIn, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -249,6 +252,7 @@ def _arrete_dict(a):
             "date_arrete": a.date_arrete, "objet": a.objet, "confidentiel": a.confidentiel,
             "has_pdf": bool(a.file_path),
             "workflow_statut": a.workflow_statut,
+            "reseau_visible": bool(getattr(a, 'reseau_visible', False)),
             "created_by": a.created_by, "created_at": a.created_at.isoformat() if a.created_at else None}
 
 
