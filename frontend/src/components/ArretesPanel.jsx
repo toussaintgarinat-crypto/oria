@@ -6,16 +6,41 @@ const TYPES = { municipal: '🏛 Municipal', prefectoral: '🏢 Préfectoral', d
 export default function ArretesPanel({ world, moi, onFermer }) {
   const [items, setItems] = useState([])
   const [filtre, setFiltre] = useState('')
+  const [archive, setArchive] = useState(false)
   const [form, setForm] = useState(null)
   const [pdfUploading, setPdfUploading] = useState(null)
   const isAdmin = world?.owner_id === moi?.id
 
-  useEffect(() => { charger() }, [world?.id, filtre])
+  useEffect(() => { charger() }, [world?.id, filtre, archive])
 
   async function charger() {
-    const path = `/arretes/world/${world.id}${filtre ? `?type_arrete=${filtre}` : ''}`
+    const path = `/arretes/world/${world.id}?archive=${archive}${filtre ? `&type_arrete=${filtre}` : ''}`
     const data = await api.get(path)
     if (data) setItems(data)
+  }
+
+  async function changerWorkflow(id, statut) {
+    await api.patch(`/arretes/${id}/workflow?statut_workflow=${statut}`, {})
+    charger()
+  }
+
+  function imprimer(a) {
+    const w = window.open('', '_blank')
+    w.document.write(`<!DOCTYPE html><html><head><title>Arrêté ${a.numero}</title>
+    <style>body{font-family:serif;max-width:700px;margin:40px auto;color:#000}
+    h1{font-size:18px;text-align:center}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:20px 0;border:1px solid #ccc;padding:12px}
+    .sign-line{border-top:1px solid #000;margin-top:60px;padding-top:8px;font-size:12px;text-align:center}</style></head>
+    <body>
+    <div style="text-align:center;font-size:12px">ARRÊTÉ ${a.type_arrete?.toUpperCase()}</div>
+    <h1>Arrêté N° ${a.numero}</h1>
+    <div class="meta">
+      <div><strong>Date :</strong> ${a.date_arrete}</div>
+      <div><strong>Type :</strong> ${a.type_arrete}</div>
+    </div>
+    <p><strong>Objet :</strong> ${a.objet || '—'}</p>
+    <div class="sign-line">Le Maire</div>
+    </body></html>`)
+    w.document.close(); w.print()
   }
 
   async function sauvegarder(e) {
@@ -61,6 +86,9 @@ export default function ArretesPanel({ world, moi, onFermer }) {
         {Object.entries(TYPES).map(([k, v]) => (
           <button key={k} className={`mairie-filter-btn ${filtre === k ? 'actif' : ''}`} onClick={() => setFiltre(k)}>{v}</button>
         ))}
+        <button className={`mairie-filter-btn ${archive ? 'actif' : ''}`} onClick={() => setArchive(v => !v)}>
+          📦 Archives
+        </button>
       </div>
 
       <div className="mairie-list">
@@ -71,6 +99,11 @@ export default function ArretesPanel({ world, moi, onFermer }) {
               <span className="mairie-card-numero">{a.numero}</span>
               <span className="mairie-card-type">{TYPES[a.type_arrete] || a.type_arrete}</span>
               {a.confidentiel && <span className="mairie-badge-confidentiel">🔒 Confidentiel</span>}
+              {a.workflow_statut && a.workflow_statut !== 'brouillon' && (
+                <span className={`workflow-badge workflow-${a.workflow_statut}`}>
+                  {a.workflow_statut === 'soumis' ? '📋 Soumis' : a.workflow_statut === 'signe' ? '✍️ Signé' : a.workflow_statut === 'publie' ? '✅ Publié' : a.workflow_statut === 'archive' ? '📦 Archivé' : a.workflow_statut}
+                </span>
+              )}
             </div>
             <div className="mairie-card-titre">{a.objet || '(sans objet)'}</div>
             <div className="mairie-card-meta"><span>📅 {a.date_arrete}</span></div>
@@ -83,8 +116,22 @@ export default function ArretesPanel({ world, moi, onFermer }) {
                   <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => uploadPdf(a, e.target.files[0])} />
                 </label>
               )}
+              <button className="mairie-btn-pdf" onClick={() => imprimer(a)} title="Modèle imprimable">🖨️</button>
               {isAdmin && (
                 <div className="mairie-card-admin-btns">
+                  {a.workflow_statut !== 'archive' && (
+                    <select
+                      value={a.workflow_statut || 'brouillon'}
+                      onChange={e => changerWorkflow(a.id, e.target.value)}
+                      className="workflow-select"
+                    >
+                      <option value="brouillon">Brouillon</option>
+                      <option value="soumis">Soumis</option>
+                      <option value="signe">Signé</option>
+                      <option value="publie">Publié</option>
+                      <option value="archive">Archiver</option>
+                    </select>
+                  )}
                   <button onClick={() => setForm(a)}>✎</button>
                   <button onClick={() => supprimer(a)}>🗑</button>
                 </div>

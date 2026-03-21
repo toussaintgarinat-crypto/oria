@@ -7,16 +7,48 @@ const STATUT_COLORS = { en_cours: '#4A90D9', adopte: '#43B581', rejete: '#F04747
 export default function DeliberationsPanel({ world, moi, onFermer }) {
   const [items, setItems] = useState([])
   const [filtre, setFiltre] = useState('')
+  const [archive, setArchive] = useState(false)
   const [form, setForm] = useState(null) // null = fermé, {} = création, {...delib} = édition
   const [pdfUploading, setPdfUploading] = useState(null)
   const isAdmin = world?.owner_id === moi?.id // simplified, ideally check member role
 
-  useEffect(() => { charger() }, [world?.id, filtre])
+  useEffect(() => { charger() }, [world?.id, filtre, archive])
 
   async function charger() {
-    const path = `/deliberations/world/${world.id}${filtre ? `?statut=${filtre}` : ''}`
+    const path = `/deliberations/world/${world.id}?archive=${archive}${filtre ? `&statut=${filtre}` : ''}`
     const data = await api.get(path)
     if (data) setItems(data)
+  }
+
+  async function changerWorkflow(id, statut) {
+    await api.patch(`/deliberations/${id}/workflow?statut_workflow=${statut}`, {})
+    charger()
+  }
+
+  function imprimer(d) {
+    const w = window.open('', '_blank')
+    w.document.write(`<!DOCTYPE html><html><head><title>Délibération ${d.numero}</title>
+    <style>body{font-family:serif;max-width:700px;margin:40px auto;color:#000}
+    h1{font-size:18px;text-align:center}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:20px 0;border:1px solid #ccc;padding:12px}
+    .statut{text-align:center;font-weight:bold;font-size:16px;border:2px solid #003189;padding:8px;margin:16px 0}
+    .footer{margin-top:60px;display:grid;grid-template-columns:1fr 1fr;gap:20px;text-align:center}
+    .sign-line{border-top:1px solid #000;margin-top:40px;padding-top:8px;font-size:12px}</style></head>
+    <body>
+    <div style="text-align:center;font-size:12px">COMMUNE — DÉLIBÉRATION</div>
+    <h1>${d.titre}</h1>
+    <div class="meta">
+      <div><strong>Numéro :</strong> ${d.numero}</div>
+      <div><strong>Date :</strong> ${d.date_seance}</div>
+      <div><strong>Statut :</strong> ${d.statut}</div>
+      <div><strong>Confidentiel :</strong> ${d.confidentiel ? 'Oui' : 'Non'}</div>
+    </div>
+    <div class="statut">OBJET : ${d.objet || '—'}</div>
+    <div class="footer">
+      <div class="sign-line">Le Secrétaire de séance</div>
+      <div class="sign-line">Le Maire</div>
+    </div>
+    </body></html>`)
+    w.document.close(); w.print()
   }
 
   async function sauvegarder(e) {
@@ -73,6 +105,9 @@ export default function DeliberationsPanel({ world, moi, onFermer }) {
         {Object.entries(STATUTS).map(([k, v]) => (
           <button key={k} className={`mairie-filter-btn ${filtre === k ? 'actif' : ''}`} onClick={() => setFiltre(k)}>{v}</button>
         ))}
+        <button className={`mairie-filter-btn ${archive ? 'actif' : ''}`} onClick={() => setArchive(v => !v)}>
+          📦 Archives
+        </button>
       </div>
 
       <div className="mairie-list">
@@ -83,6 +118,11 @@ export default function DeliberationsPanel({ world, moi, onFermer }) {
               <span className="mairie-card-numero">{d.numero}</span>
               <span className="mairie-card-statut" style={{ color: STATUT_COLORS[d.statut] }}>{STATUTS[d.statut] || d.statut}</span>
               {d.confidentiel && <span className="mairie-badge-confidentiel">🔒 Confidentiel</span>}
+              {d.workflow_statut && d.workflow_statut !== 'brouillon' && (
+                <span className={`workflow-badge workflow-${d.workflow_statut}`}>
+                  {d.workflow_statut === 'soumis' ? '📋 Soumis' : d.workflow_statut === 'signe' ? '✍️ Signé' : d.workflow_statut === 'publie' ? '✅ Publié' : d.workflow_statut === 'archive' ? '📦 Archivé' : d.workflow_statut}
+                </span>
+              )}
             </div>
             <div className="mairie-card-titre">{d.titre}</div>
             <div className="mairie-card-meta">
@@ -98,8 +138,22 @@ export default function DeliberationsPanel({ world, moi, onFermer }) {
                   <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => uploadPdf(d, e.target.files[0])} />
                 </label>
               )}
+              <button className="mairie-btn-pdf" onClick={() => imprimer(d)} title="Modèle imprimable">🖨️</button>
               {isAdmin && (
                 <div className="mairie-card-admin-btns">
+                  {d.workflow_statut !== 'archive' && (
+                    <select
+                      value={d.workflow_statut || 'brouillon'}
+                      onChange={e => changerWorkflow(d.id, e.target.value)}
+                      className="workflow-select"
+                    >
+                      <option value="brouillon">Brouillon</option>
+                      <option value="soumis">Soumis</option>
+                      <option value="signe">Signé</option>
+                      <option value="publie">Publié</option>
+                      <option value="archive">Archiver</option>
+                    </select>
+                  )}
                   <button onClick={() => setForm(d)}>✎</button>
                   <button onClick={() => supprimer(d)}>🗑</button>
                 </div>

@@ -17,6 +17,7 @@ class Deliberation(Base):
     statut      = Column(String, default="en_cours")  # en_cours|adopte|rejete|reporte
     objet       = Column(Text, default="")
     confidentiel = Column(Boolean, default=False)
+    workflow_statut = Column(String, default="brouillon")
     file_path   = Column(String, nullable=True)
     created_by  = Column(String, nullable=False)
     created_at  = Column(DateTime, default=_now)
@@ -31,6 +32,7 @@ class Arrete(Base):
     date_arrete = Column(String, nullable=False)       # ISO string
     objet       = Column(Text, nullable=False, default="")
     confidentiel = Column(Boolean, default=False)
+    workflow_statut = Column(String, default="brouillon")
     file_path   = Column(String, nullable=True)
     created_by  = Column(String, nullable=False)
     created_at  = Column(DateTime, default=_now)
@@ -79,6 +81,8 @@ class Ticket(Base):
     statut       = Column(String, default="nouveau")  # nouveau|en_traitement|resolu|ferme
     assigne_a    = Column(String, nullable=True)       # user_id de l'agent
     reponse      = Column(Text, nullable=True)
+    lat          = Column(String, nullable=True)
+    lng          = Column(String, nullable=True)
     created_at   = Column(DateTime, default=_now)
     updated_at   = Column(DateTime, default=_now, onupdate=_now)
 

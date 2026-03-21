@@ -78,13 +78,17 @@ def creer_delib(body: DelibIn, db: Session = Depends(get_db), user=Depends(get_c
     return _delib_dict(d)
 
 @deliberations_router.get("/world/{world_id}")
-def lister_delibs(world_id: str, statut: Optional[str] = None, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def lister_delibs(world_id: str, statut: Optional[str] = None, archive: bool = False, db: Session = Depends(get_db), user=Depends(get_current_user)):
     admin = _is_admin(db, world_id, user["id"])
     q = db.query(Deliberation).filter_by(world_id=world_id)
     if not admin:
         q = q.filter_by(confidentiel=False)
     if statut:
         q = q.filter_by(statut=statut)
+    if archive:
+        q = q.filter(Deliberation.workflow_statut == "archive")
+    else:
+        q = q.filter(Deliberation.workflow_statut != "archive")
     return [_delib_dict(d) for d in q.order_by(Deliberation.date_seance.desc()).all()]
 
 @deliberations_router.get("/{id}")
@@ -115,6 +119,17 @@ def supprimer_delib(id: str, db: Session = Depends(get_db), user=Depends(get_cur
     db.delete(d); db.commit()
     return {"ok": True}
 
+@deliberations_router.patch("/{id}/workflow")
+def workflow_delib(id: str, statut_workflow: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Workflow: brouillon → soumis → signe → publie"""
+    d = db.query(Deliberation).get(id)
+    if not d: raise HTTPException(404)
+    if not _is_admin(db, d.world_id, user["id"]): raise HTTPException(403)
+    d.workflow_statut = statut_workflow
+    db.commit(); db.refresh(d)
+    _log(db, f"workflow_delib_{statut_workflow}", user, d.world_id, "deliberation", d.id)
+    return _delib_dict(d)
+
 @deliberations_router.post("/{id}/pdf")
 async def upload_delib_pdf(id: str, file: UploadFile = File(...), db: Session = Depends(get_db), user=Depends(get_current_user)):
     d = db.query(Deliberation).get(id)
@@ -137,6 +152,7 @@ def _delib_dict(d):
     return {"id": d.id, "world_id": d.world_id, "numero": d.numero, "titre": d.titre,
             "date_seance": d.date_seance, "statut": d.statut, "objet": d.objet,
             "confidentiel": d.confidentiel, "has_pdf": bool(d.file_path),
+            "workflow_statut": d.workflow_statut,
             "created_by": d.created_by, "created_at": d.created_at.isoformat() if d.created_at else None}
 
 
@@ -201,6 +217,15 @@ def supprimer_arrete(id: str, db: Session = Depends(get_db), user=Depends(get_cu
     db.delete(a); db.commit()
     return {"ok": True}
 
+@arretes_router.patch("/{id}/workflow")
+def workflow_arrete(id: str, statut_workflow: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    a = db.query(Arrete).get(id)
+    if not a: raise HTTPException(404)
+    if not _is_admin(db, a.world_id, user["id"]): raise HTTPException(403)
+    a.workflow_statut = statut_workflow
+    db.commit(); db.refresh(a)
+    return _arrete_dict(a)
+
 @arretes_router.post("/{id}/pdf")
 async def upload_arrete_pdf(id: str, file: UploadFile = File(...), db: Session = Depends(get_db), user=Depends(get_current_user)):
     a = db.query(Arrete).get(id)
@@ -223,6 +248,7 @@ def _arrete_dict(a):
     return {"id": a.id, "world_id": a.world_id, "numero": a.numero, "type_arrete": a.type_arrete,
             "date_arrete": a.date_arrete, "objet": a.objet, "confidentiel": a.confidentiel,
             "has_pdf": bool(a.file_path),
+            "workflow_statut": a.workflow_statut,
             "created_by": a.created_by, "created_at": a.created_at.isoformat() if a.created_at else None}
 
 
@@ -249,6 +275,22 @@ def creer_conseil(body: ConseilIn, db: Session = Depends(get_db), user=Depends(g
     if not _is_admin(db, body.world_id, user["id"]): raise HTTPException(403)
     c = ConseilMunicipal(**body.dict(), created_by=user["id"])
     db.add(c); db.commit(); db.refresh(c)
+
+    # Envoi email convocations aux élus
+    try:
+        from services.email_service import send_convocation
+        from models.mairie import AgentElu
+        from models.world import World
+        elus = db.query(AgentElu).filter_by(world_id=body.world_id, type_poste="elu", actif=True).all()
+        world_obj = db.query(World).get(body.world_id)
+        commune_nom = world_obj.nom if world_obj else "la mairie"
+        for elu in elus:
+            if elu.email_pro:
+                send_convocation(elu.email_pro, f"{elu.prenom} {elu.nom}",
+                               body.date_conseil, body.heure, body.lieu,
+                               body.ordre_du_jour, commune_nom)
+    except Exception as e:
+        logger.warning(f"Convocations email échouées: {e}")
 
     # Convocation automatique dans le canal principal
     try:
@@ -392,6 +434,31 @@ def desactiver_agent(id: str, db: Session = Depends(get_db), user=Depends(get_cu
     a.actif = False; db.commit()
     return {"ok": True}
 
+@annuaire_router.post("/import")
+async def importer_agents(world_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Import CSV : colonnes nom,prenom,type_poste,service,fonction,telephone,email_pro,bureau"""
+    if not _is_admin(db, world_id, user["id"]): raise HTTPException(403)
+    import csv, io
+    content = (await file.read()).decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(content))
+    imported = 0
+    for row in reader:
+        a = AgentElu(
+            world_id=world_id,
+            nom=row.get("nom", "").strip(),
+            prenom=row.get("prenom", "").strip(),
+            type_poste=row.get("type_poste", "agent").strip(),
+            service=row.get("service", "").strip(),
+            fonction=row.get("fonction", "").strip(),
+            telephone=row.get("telephone", "").strip(),
+            email_pro=row.get("email_pro", "").strip(),
+            bureau=row.get("bureau", "").strip(),
+        )
+        if a.nom and a.prenom:
+            db.add(a); imported += 1
+    db.commit()
+    return {"imported": imported}
+
 def _agent_dict(a):
     return {"id": a.id, "world_id": a.world_id, "user_id": a.user_id,
             "nom": a.nom, "prenom": a.prenom, "type_poste": a.type_poste,
@@ -446,6 +513,16 @@ def modifier_ticket(id: str, body: TicketPatch, db: Session = Depends(get_db), u
     for k, v in body.dict(exclude_none=True).items(): setattr(t, k, v)
     t.updated_at = datetime.utcnow()
     db.commit(); db.refresh(t)
+    # Envoi email si réponse fournie
+    if body.reponse and t.email_citoyen:
+        try:
+            from services.email_service import send_ticket_response
+            from models.world import World
+            world_obj = db.query(World).get(t.world_id)
+            commune_nom = world_obj.nom if world_obj else "la mairie"
+            send_ticket_response(t.email_citoyen, t.nom_citoyen, t.titre, body.reponse, commune_nom)
+        except Exception as e:
+            logger.warning(f"Email ticket échoué: {e}")
     return _ticket_dict(t)
 
 def _ticket_dict(t):

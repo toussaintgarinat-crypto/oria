@@ -9,6 +9,7 @@ export default function AnnuairePanel({ world, moi, onFermer }) {
   const [filtre, setFiltre] = useState('')
   const [form, setForm] = useState(null)
   const [vue, setVue] = useState('liste') // 'liste' | 'organigramme'
+  const [importLoading, setImportLoading] = useState(false)
   const isAdmin = world?.owner_id === moi?.id
 
   useEffect(() => { charger() }, [world?.id, filtre])
@@ -37,6 +38,17 @@ export default function AnnuairePanel({ world, moi, onFermer }) {
     if (result) { setForm(null); charger() }
   }
 
+  async function importerCSV(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImportLoading(true)
+    const fd = new FormData(); fd.append('file', file)
+    const result = await api.upload(`/annuaire/import?world_id=${world.id}`, fd)
+    setImportLoading(false)
+    if (result) { charger() }
+    e.target.value = ''
+  }
+
   async function desactiver(a) {
     if (!confirm(`Désactiver ${a.prenom} ${a.nom} ?`)) return
     await api.del(`/annuaire/${a.id}`)
@@ -51,6 +63,12 @@ export default function AnnuairePanel({ world, moi, onFermer }) {
           <button className={`mairie-filter-btn ${vue === 'organigramme' ? 'actif' : ''}`} onClick={() => setVue(v => v === 'organigramme' ? 'liste' : 'organigramme')}>
             🌳 Organigramme
           </button>
+          {isAdmin && (
+            <label className="mairie-btn-pdf-upload" title="Importer CSV (nom,prenom,type_poste,service,fonction,telephone,email_pro,bureau)">
+              {importLoading ? '⏳' : '📥 Import CSV'}
+              <input type="file" accept=".csv" style={{ display: 'none' }} onChange={importerCSV} />
+            </label>
+          )}
           {isAdmin && <button className="mairie-btn-primary" onClick={() => setForm({})}>＋ Ajouter</button>}
           <button className="mairie-btn-close" onClick={onFermer}>✕</button>
         </div>

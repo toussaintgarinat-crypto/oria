@@ -18,6 +18,9 @@ import AnnuairePanel from './AnnuairePanel.jsx'
 import TicketsPanel from './TicketsPanel.jsx'
 import AuditPanel from './AuditPanel.jsx'
 import TableauBordMaire from './TableauBordMaire.jsx'
+import VotePanel from './VotePanel.jsx'
+import SearchPanel from './SearchPanel.jsx'
+import CalendarPanel from './CalendarPanel.jsx'
 import { useUnreadCounts } from '../hooks/useUnreadCounts.js'
 import { useUnreadDMCounts } from '../hooks/useUnreadDMCounts.js'
 
@@ -33,6 +36,7 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
   const [showSettings, setShowSettings]     = useState(false)
   const [docsScope, setDocsScope]           = useState(null) // { type, id, nom }
   const [outilActif, setOutilActif]         = useState(null) // 'deliberations' | 'arretes' | 'conseil' | 'annuaire' | 'tickets' | 'audit' | 'tableau'
+  const [voteConseil, setVoteConseil]       = useState(null) // { conseil, world }
 
   const resizeRef = useRef(null) // { index, startX, startWidths, containerWidth }
 
@@ -96,6 +100,15 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
     setShowMembers(false)
     setDmDestinataire(null)
     setDocsScope(null)
+    setVoteConseil(null)
+  }
+
+  function ouvrirVotes(conseil) {
+    setVoteConseil(conseil)
+    setShowMembers(false)
+    setDmDestinataire(null)
+    setDocsScope(null)
+    setOutilActif(null)
   }
 
   function ouvrirDM(membre) {
@@ -185,7 +198,7 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
   } else if (outilActif === 'arretes') {
     contenuPrincipal = <ArretesPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
   } else if (outilActif === 'conseil') {
-    contenuPrincipal = <ConseilPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+    contenuPrincipal = <ConseilPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} onOuvrirVotes={ouvrirVotes} />
   } else if (outilActif === 'annuaire') {
     contenuPrincipal = <AnnuairePanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
   } else if (outilActif === 'tickets') {
@@ -194,6 +207,12 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
     contenuPrincipal = <AuditPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
   } else if (outilActif === 'tableau') {
     contenuPrincipal = <TableauBordMaire world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (outilActif === 'search') {
+    contenuPrincipal = <SearchPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} onNavigate={(section, item) => { setOutilActif(section === 'deliberations' ? 'deliberations' : section === 'arretes' ? 'arretes' : section === 'annuaire' ? 'annuaire' : section === 'tickets' ? 'tickets' : null) }} />
+  } else if (outilActif === 'calendar') {
+    contenuPrincipal = <CalendarPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (voteConseil) {
+    contenuPrincipal = <VotePanel conseil={voteConseil} world={worldActif} moi={moi} onFermer={() => setVoteConseil(null)} />
   } else if (dmDestinataire) {
     contenuPrincipal = (
       <DMPanel world={worldActif} moi={moi} destinataire={dmDestinataire} onFermer={() => setDmDestinataire(null)} />
@@ -275,6 +294,7 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
             setDmDestinataire(null)
           }}
           onOuvrirOutil={ouvrirOutil}
+          onOuvrirVotes={ouvrirVotes}
         />
       )}
 

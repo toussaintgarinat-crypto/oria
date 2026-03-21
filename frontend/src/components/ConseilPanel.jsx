@@ -4,7 +4,7 @@ import { api } from '../services/api.js'
 const STATUTS = { planifie: '📅 Planifié', en_cours: '🔴 En cours', termine: '✅ Terminé', annule: '❌ Annulé' }
 const STATUT_COLORS = { planifie: '#4A90D9', en_cours: '#F04747', termine: '#43B581', annule: '#72767d' }
 
-export default function ConseilPanel({ world, moi, onFermer }) {
+export default function ConseilPanel({ world, moi, onFermer, onOuvrirVotes }) {
   const [items, setItems] = useState([])
   const [form, setForm] = useState(null)
   const [pvUploading, setPvUploading] = useState(null)
@@ -92,6 +92,15 @@ export default function ConseilPanel({ world, moi, onFermer }) {
                   {pvUploading === c.id ? '⏳ Upload...' : '📎 Joindre PV'}
                   <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => uploadPv(c, e.target.files[0])} />
                 </label>
+              )}
+              {c.statut === 'en_cours' && (
+                <button
+                  className="mairie-btn-primary"
+                  onClick={() => onOuvrirVotes?.(c)}
+                  style={{ fontSize: 12 }}
+                >
+                  🗳️ Votes
+                </button>
               )}
               {isAdmin && (
                 <div className="mairie-card-admin-btns">

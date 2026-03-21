@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 import models.world, models.building, models.user, models.quartier, models.dm, models.network
 import models.mairie
+import models.vote
 from routers import worlds, buildings, rooms, tokens, auth, quartiers
 from routers import invitations, files as files_router, network as network_router
 from routers import matrix_as
@@ -15,8 +16,12 @@ Base.metadata.create_all(bind=engine)
 # Migration légère — ajoute les colonnes si elles n'existent pas encore
 def _migrate():
     nouvelles_colonnes = [
-        ("files", "building_id", "TEXT"),
-        ("files", "world_id",    "TEXT"),
+        ("files",          "building_id",    "TEXT"),
+        ("files",          "world_id",       "TEXT"),
+        ("deliberations",  "workflow_statut","VARCHAR DEFAULT 'brouillon'"),
+        ("arretes",        "workflow_statut","VARCHAR DEFAULT 'brouillon'"),
+        ("tickets",        "lat",            "VARCHAR"),
+        ("tickets",        "lng",            "VARCHAR"),
     ]
     with engine.connect() as conn:
         for table, col, typ in nouvelles_colonnes:
@@ -66,6 +71,10 @@ app.include_router(tickets_router,       prefix="/api/tickets",       tags=["Tic
 app.include_router(notifs_router,        prefix="/api/notifs",        tags=["Notifications"])
 app.include_router(audit_router,         prefix="/api/audit",         tags=["Audit"])
 app.include_router(tableau_router,       prefix="/api/tableau-bord",  tags=["Tableau de bord"])
+from routers.vote_router import router as vote_router
+from routers.search_router import router as search_router
+app.include_router(vote_router,   prefix="/api/votes",  tags=["Votes"])
+app.include_router(search_router, prefix="/api/search", tags=["Recherche"])
 # Application Service Matrix — montée sans préfixe /api (protocole Matrix)
 app.include_router(matrix_as.router, tags=["Matrix AS"])
 

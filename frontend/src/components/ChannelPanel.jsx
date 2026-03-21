@@ -177,6 +177,12 @@ export default function ChannelPanel({
               <span>🔍</span> Journal d'audit
             </button>
           )}
+          <button className="channel-outil-btn" onClick={() => onOuvrirOutil?.('search')}>
+            <span>🔍</span> Recherche
+          </button>
+          <button className="channel-outil-btn" onClick={() => onOuvrirOutil?.('calendar')}>
+            <span>📅</span> Calendrier
+          </button>
         </div>
 
         {/* Boutons admin */}

@@ -91,6 +91,9 @@ export default function TicketsPanel({ world, moi, onFermer }) {
               <div className="mairie-ticket-reponse-existante">
                 <strong>Réponse envoyée :</strong>
                 <p>{detail.reponse}</p>
+                <p style={{ fontSize: 12, color: '#72767d', marginTop: 4 }}>
+                  📧 Une notification email est envoyée automatiquement au citoyen lors de la réponse.
+                </p>
               </div>
             )}
             <div className="mairie-ticket-reponse-form">

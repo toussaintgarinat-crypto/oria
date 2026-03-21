@@ -7,7 +7,7 @@ const NOTIF_COLORS = { info: '#4A90D9', alerte: '#FAA61A', urgence: '#F04747' }
 export default function PortailCitoyen({ communeId }) {
   const [commune, setCommune] = useState(null)
   const [notifs, setNotifs] = useState([])
-  const [form, setForm] = useState({ nom: '', email: '', type: 'autre', titre: '', description: '' })
+  const [form, setForm] = useState({ nom: '', email: '', type: 'autre', titre: '', description: '', lat: '', lng: '' })
   const [envoye, setEnvoye] = useState(false)
   const [erreur, setErreur] = useState(null)
 
@@ -18,6 +18,14 @@ export default function PortailCitoyen({ communeId }) {
     // Charger notifications actives
     fetch(`${BASE}/api/notifs/world/${communeId}`).then(r => r.json()).then(d => { if (Array.isArray(d)) setNotifs(d) }).catch(() => {})
   }, [communeId])
+
+  function geoLocaliser() {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      pos => setForm(f => ({ ...f, lat: String(pos.coords.latitude), lng: String(pos.coords.longitude) })),
+      () => {}
+    )
+  }
 
   async function soumettre(e) {
     e.preventDefault()
@@ -98,6 +106,12 @@ export default function PortailCitoyen({ communeId }) {
               </label>
               <label>Titre de votre demande <input value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))} required placeholder="Ex: Nid de poule rue du Moulin" /></label>
               <label>Description <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} placeholder="Décrivez votre demande en détail..." /></label>
+              <div className="portail-geo-row">
+                <button type="button" className="portail-btn-geo" onClick={geoLocaliser}>
+                  📍 Me localiser
+                </button>
+                {form.lat && <span className="portail-geo-ok">📌 Position enregistrée ({parseFloat(form.lat).toFixed(4)}, {parseFloat(form.lng).toFixed(4)})</span>}
+              </div>
               <button type="submit" className="portail-btn-submit">📤 Envoyer ma demande</button>
             </form>
           )}
