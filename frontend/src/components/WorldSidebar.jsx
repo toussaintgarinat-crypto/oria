@@ -1,4 +1,4 @@
-export default function WorldSidebar({ worlds, worldActifId, moi, onSelectWorld, onCreerWorld, onDeconnexion, onNetwork, showNetwork }) {
+export default function WorldSidebar({ worlds, worldActifId, moi, onSelectWorld, onCreerWorld, onDeconnexion, onNetwork, showNetwork, onSettings }) {
   return (
     <div className="sidebar">
       <div className="sidebar-logo">🌍</div>
@@ -35,7 +35,7 @@ export default function WorldSidebar({ worlds, worldActifId, moi, onSelectWorld,
 
       <div className="sidebar-bottom">
         <div className="sidebar-divider" />
-        <button className="moi-btn" onClick={onDeconnexion} title="Se déconnecter">
+        <button className="moi-btn" onClick={onSettings} title="Paramètres">
           <span>{moi.avatar_emoji}</span>
         </button>
       </div>

@@ -1,0 +1,342 @@
+{
+  "version": "1.0.0",
+  "project_name": "Oria",
+  "project_type": "web-app-communication",
+  "domain": "spatial-communication",
+  "stack": "FastAPI, React 18, Vite, LiveKit, SQLAlchemy, SQLite/PostgreSQL",
+  "last_updated": "2026-03-20",
+  "total_features": 32,
+  "completed_features": 14,
+  "categories": ["AUTH", "WORLDS", "BUILDINGS", "ROOMS", "MESSAGES", "PRESENCE", "VOCAL", "DM", "NETWORK", "FILES", "INVITATIONS", "NOTIF", "SETTINGS", "POLISH"],
+  "features": [
+
+    {
+      "id": "AUTH-001",
+      "category": "AUTH",
+      "priority": "HIGH",
+      "complexity": "LOW",
+      "title": "Inscription",
+      "description": "L'utilisateur peut créer un compte avec email, nom, mot de passe et avatar emoji",
+      "acceptance_criteria": [
+        "Formulaire d'inscription visible",
+        "Validation email + password",
+        "Avatar emoji sélectionnable",
+        "JWT retourné et stocké dans localStorage sous 'oria_token'",
+        "Redirect vers l'app après inscription"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+    {
+      "id": "AUTH-002",
+      "category": "AUTH",
+      "priority": "HIGH",
+      "complexity": "LOW",
+      "title": "Connexion",
+      "description": "L'utilisateur peut se connecter et retrouver son espace",
+      "acceptance_criteria": [
+        "Formulaire login visible",
+        "JWT stocké sous 'oria_token'",
+        "Redirect vers MainLayout après connexion",
+        "Message d'erreur si identifiants incorrects"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+
+    {
+      "id": "WORLDS-001",
+      "category": "WORLDS",
+      "priority": "HIGH",
+      "complexity": "MEDIUM",
+      "title": "Créer un monde",
+      "description": "L'utilisateur peut créer un monde avec nom, emoji, couleur, description",
+      "acceptance_criteria": [
+        "Modal de création accessible",
+        "Champs : nom, emoji, couleur, description",
+        "Monde apparaît dans la liste après création",
+        "Utilisateur devient propriétaire automatiquement"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+    {
+      "id": "WORLDS-002",
+      "category": "WORLDS",
+      "priority": "HIGH",
+      "complexity": "MEDIUM",
+      "title": "Gérer les membres",
+      "description": "Les membres d'un monde sont visibles avec leurs rôles",
+      "acceptance_criteria": [
+        "Panel membres affiche tous les membres",
+        "Rôles affichés (propriétaire/admin/membre)",
+        "Membres online/offline visibles"
+      ],
+      "passes": false,
+      "completed_at": null,
+      "note": "UI ok mais présence WebSocket bugué (fixé le 2026-03-20 — à re-tester)"
+    },
+
+    {
+      "id": "BUILDINGS-001",
+      "category": "BUILDINGS",
+      "priority": "HIGH",
+      "complexity": "MEDIUM",
+      "title": "Créer un bâtiment",
+      "description": "L'utilisateur peut créer un bâtiment (Maison/Site/Immeuble) avec rooms auto-générées",
+      "acceptance_criteria": [
+        "Modal de création accessible",
+        "3 types disponibles : Maison, Site, Immeuble",
+        "Rooms par défaut créées automatiquement selon le type",
+        "Bâtiment apparaît dans le monde"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+    {
+      "id": "BUILDINGS-002",
+      "category": "BUILDINGS",
+      "priority": "MEDIUM",
+      "complexity": "LOW",
+      "title": "Quartiers",
+      "description": "Les bâtiments peuvent être groupés dans des quartiers",
+      "acceptance_criteria": [
+        "Création d'un quartier possible",
+        "Assigner un bâtiment à un quartier",
+        "Quartiers visibles dans le panel latéral",
+        "Suppression quartier désassigne les bâtiments"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+
+    {
+      "id": "ROOMS-001",
+      "category": "ROOMS",
+      "priority": "HIGH",
+      "complexity": "MEDIUM",
+      "title": "Chat texte en temps réel",
+      "description": "Les utilisateurs peuvent échanger des messages dans une room texte",
+      "acceptance_criteria": [
+        "Messages s'affichent dans la room",
+        "Nouveau message apparaît sans rechargement (WebSocket)",
+        "Historique chargé à l'ouverture",
+        "Auteur et heure affichés"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+    {
+      "id": "ROOMS-002",
+      "category": "ROOMS",
+      "priority": "MEDIUM",
+      "complexity": "LOW",
+      "title": "Réactions aux messages",
+      "description": "Les utilisateurs peuvent réagir aux messages avec des emojis",
+      "acceptance_criteria": [
+        "Clic sur emoji ajoute une réaction",
+        "Compteur de réactions visible",
+        "Double-clic retire la réaction"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+
+    {
+      "id": "FILES-001",
+      "category": "FILES",
+      "priority": "MEDIUM",
+      "complexity": "MEDIUM",
+      "title": "Upload de fichiers dans une room",
+      "description": "Les utilisateurs peuvent partager des fichiers dans une room",
+      "acceptance_criteria": [
+        "Bouton upload visible dans la room",
+        "Fichier uploadé apparaît dans la liste",
+        "Téléchargement possible",
+        "Suppression possible (propriétaire)"
+      ],
+      "passes": false,
+      "completed_at": null,
+      "note": "Bug localStorage fixé le 2026-03-20 — à re-tester"
+    },
+
+    {
+      "id": "PRESENCE-001",
+      "category": "PRESENCE",
+      "priority": "HIGH",
+      "complexity": "MEDIUM",
+      "title": "Présence online/offline",
+      "description": "Les membres connectés apparaissent en vert dans le panel membres",
+      "acceptance_criteria": [
+        "Membres online visibles avec indicateur vert",
+        "Membres offline distinguables",
+        "Mise à jour en temps réel (WebSocket)",
+        "Affichage de la room où se trouve un membre"
+      ],
+      "passes": false,
+      "completed_at": null,
+      "note": "Bug type WebSocket 'presence' vs 'snapshot' fixé le 2026-03-20 — à re-tester"
+    },
+
+    {
+      "id": "VOCAL-001",
+      "category": "VOCAL",
+      "priority": "HIGH",
+      "complexity": "HIGH",
+      "title": "Salon vocal (LiveKit)",
+      "description": "Les utilisateurs peuvent rejoindre un salon vocal et se parler",
+      "acceptance_criteria": [
+        "Bouton rejoindre le salon visible",
+        "Connexion LiveKit établie",
+        "Liste des participants visible",
+        "Toggle micro et caméra fonctionnels",
+        "Déconnexion propre"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+
+    {
+      "id": "DM-001",
+      "category": "DM",
+      "priority": "HIGH",
+      "complexity": "MEDIUM",
+      "title": "Messages directs",
+      "description": "Les utilisateurs peuvent s'envoyer des messages privés",
+      "acceptance_criteria": [
+        "Panel DM accessible",
+        "Sélectionner un utilisateur pour ouvrir une conversation",
+        "Messages envoyés et reçus en temps réel",
+        "Historique chargé à l'ouverture"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+
+    {
+      "id": "NETWORK-001",
+      "category": "NETWORK",
+      "priority": "MEDIUM",
+      "complexity": "HIGH",
+      "title": "Réseau de mondes (graphe)",
+      "description": "Les mondes peuvent être reliés entre eux avec différents types de liens",
+      "acceptance_criteria": [
+        "Vue graphe accessible",
+        "Créer un lien entre deux mondes",
+        "5 types de liens disponibles (filiale, partenaire, etc.)",
+        "Visualisation force-graph interactive"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+
+    {
+      "id": "INVIT-001",
+      "category": "INVITATIONS",
+      "priority": "HIGH",
+      "complexity": "LOW",
+      "title": "Liens d'invitation",
+      "description": "Un admin peut générer un lien pour inviter quelqu'un dans son monde",
+      "acceptance_criteria": [
+        "Modal de création de lien accessible",
+        "Lien copiable généré",
+        "Limite d'usage configurable",
+        "Rejoindre via lien fonctionne"
+      ],
+      "passes": true,
+      "completed_at": "2026-01-01"
+    },
+
+    {
+      "id": "NOTIF-001",
+      "category": "NOTIF",
+      "priority": "MEDIUM",
+      "complexity": "MEDIUM",
+      "title": "Notifications de nouveaux messages",
+      "description": "L'utilisateur est notifié des nouveaux messages dans les rooms qu'il n'a pas ouvertes",
+      "acceptance_criteria": [
+        "Badge rouge sur la room avec messages non lus",
+        "Compteur de messages non lus visible",
+        "Badge disparaît à l'ouverture de la room"
+      ],
+      "passes": true,
+      "completed_at": "2026-03-20"
+    },
+    {
+      "id": "NOTIF-002",
+      "category": "NOTIF",
+      "priority": "LOW",
+      "complexity": "MEDIUM",
+      "title": "Notifications DM",
+      "description": "Badge sur le panel DM quand un nouveau message direct arrive",
+      "acceptance_criteria": [
+        "Badge visible sur l'icône DM",
+        "Badge disparaît à l'ouverture de la conversation"
+      ],
+      "passes": true,
+      "completed_at": "2026-03-20"
+    },
+
+    {
+      "id": "SETTINGS-001",
+      "category": "SETTINGS",
+      "priority": "LOW",
+      "complexity": "LOW",
+      "title": "Paramètres utilisateur",
+      "description": "L'utilisateur peut modifier son profil (nom, avatar emoji)",
+      "acceptance_criteria": [
+        "Page/modal paramètres accessible",
+        "Modifier nom et avatar",
+        "Changements persistés"
+      ],
+      "passes": true,
+      "completed_at": "2026-03-20"
+    },
+
+    {
+      "id": "POLISH-001",
+      "category": "POLISH",
+      "priority": "MEDIUM",
+      "complexity": "MEDIUM",
+      "title": "Gestion d'erreurs frontend",
+      "description": "Les erreurs réseau/API sont gérées et affichées à l'utilisateur",
+      "acceptance_criteria": [
+        "Try/catch sur tous les appels API",
+        "Message d'erreur visible si backend unreachable",
+        "Pas de crash silencieux"
+      ],
+      "passes": true,
+      "completed_at": "2026-03-20"
+    },
+    {
+      "id": "POLISH-002",
+      "category": "POLISH",
+      "priority": "MEDIUM",
+      "complexity": "MEDIUM",
+      "title": "Reconnexion WebSocket automatique",
+      "description": "Si la connexion WebSocket se coupe, elle se rétablit automatiquement",
+      "acceptance_criteria": [
+        "Détection de la déconnexion",
+        "Tentative de reconnexion automatique",
+        "Indicateur visuel pendant la reconnexion"
+      ],
+      "passes": true,
+      "completed_at": "2026-03-20"
+    },
+    {
+      "id": "POLISH-003",
+      "category": "POLISH",
+      "priority": "LOW",
+      "complexity": "LOW",
+      "title": "Refresh token",
+      "description": "Le JWT est renouvelé automatiquement avant expiration (30 jours)",
+      "acceptance_criteria": [
+        "Token détecté comme expirant",
+        "Nouveau token demandé silencieusement",
+        "Pas de déconnexion intempestive"
+      ],
+      "passes": true,
+      "completed_at": "2026-03-20"
+    }
+  ]
+}

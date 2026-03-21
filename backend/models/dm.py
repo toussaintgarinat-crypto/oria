@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text
+from sqlalchemy import Column, String, Text, DateTime
 from datetime import datetime
 import uuid
 from database import Base
@@ -13,3 +13,12 @@ class DirectMessage(Base):
     to_user_id   = Column(String, nullable=False)
     contenu      = Column(Text, nullable=False)
     created_at   = Column(String, nullable=False)
+
+class DirectMessageRoom(Base):
+    """Lien entre deux utilisateurs Oria et leur room Matrix DM."""
+    __tablename__ = "dm_rooms"
+    id             = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_a_id      = Column(String, nullable=False)
+    user_b_id      = Column(String, nullable=False)
+    matrix_room_id = Column(String, nullable=False)
+    created_at     = Column(DateTime, default=datetime.utcnow)

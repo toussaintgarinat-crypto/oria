@@ -7,8 +7,14 @@ import DMPanel from './DMPanel.jsx'
 import NetworkView from './NetworkView.jsx'
 import CreateWorldModal from './CreateWorldModal.jsx'
 import { api } from '../services/api.js'
+import Toast from './Toast.jsx'
+import SyncStatus from './SyncStatus.jsx'
+import SettingsModal from './SettingsModal.jsx'
+import DocumentsPanel from './DocumentsPanel.jsx'
+import { useUnreadCounts } from '../hooks/useUnreadCounts.js'
+import { useUnreadDMCounts } from '../hooks/useUnreadDMCounts.js'
 
-export default function MainLayout({ moi, onDeconnexion }) {
+export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
   const [worlds, setWorlds]                 = useState([])
   const [worldActif, setWorldActif]         = useState(null)
   const [roomsOuvertes, setRoomsOuvertes]   = useState([])   // [{ room, building }]
@@ -17,6 +23,8 @@ export default function MainLayout({ moi, onDeconnexion }) {
   const [showMembers, setShowMembers]       = useState(false)
   const [dmDestinataire, setDmDestinataire] = useState(null)
   const [showNetwork, setShowNetwork]       = useState(false)
+  const [showSettings, setShowSettings]     = useState(false)
+  const [docsScope, setDocsScope]           = useState(null) // { type, id, nom }
 
   const resizeRef = useRef(null) // { index, startX, startWidths, containerWidth }
 
@@ -51,6 +59,8 @@ export default function MainLayout({ moi, onDeconnexion }) {
   function entrerRoom(room, building) {
     setShowMembers(false)
     setDmDestinataire(null)
+    setDocsScope(null)
+    markAsRead(room.matrix_room_id)
     setRoomsOuvertes(prev => {
       if (prev.find(r => r.room.id === room.id)) return prev
       const next = [...prev, { room, building, world: worldActif }]
@@ -75,6 +85,7 @@ export default function MainLayout({ moi, onDeconnexion }) {
   function ouvrirDM(membre) {
     setDmDestinataire(membre)
     setShowMembers(false)
+    markDMAsRead(membre.matrix_user_id)
   }
 
   function basculerNetwork() {
@@ -126,6 +137,15 @@ export default function MainLayout({ moi, onDeconnexion }) {
     document.addEventListener('mouseup', onUp)
   }, [largeurs])
 
+  // ── Messages non lus ───────────────────────────────────────────
+  const activeMatrixRoomIds = new Set(
+    roomsOuvertes.map(r => r.room.matrix_room_id).filter(Boolean)
+  )
+  const { counts: unreadCounts, markAsRead } = useUnreadCounts(activeMatrixRoomIds)
+  const { total: dmUnreadTotal, byMxid: dmUnreadByMxid, markDMAsRead } = useUnreadDMCounts(
+    dmDestinataire?.matrix_user_id || null
+  )
+
   // ── Zone principale ────────────────────────────────────────────
   const roomIds = new Set(roomsOuvertes.map(r => r.room.id))
 
@@ -134,13 +154,23 @@ export default function MainLayout({ moi, onDeconnexion }) {
     contenuPrincipal = (
       <NetworkView moi={moi} onOuvrirWorld={w => { setShowNetwork(false); chargerWorldComplet(w.id) }} />
     )
+  } else if (docsScope) {
+    contenuPrincipal = (
+      <DocumentsPanel
+        scope={docsScope.type}
+        scopeId={docsScope.id}
+        scopeNom={docsScope.nom}
+        moi={moi}
+        onFermer={() => setDocsScope(null)}
+      />
+    )
   } else if (dmDestinataire) {
     contenuPrincipal = (
       <DMPanel world={worldActif} moi={moi} destinataire={dmDestinataire} onFermer={() => setDmDestinataire(null)} />
     )
   } else if (showMembers) {
     contenuPrincipal = (
-      <MembersPanel world={worldActif} moi={moi} onFermer={() => setShowMembers(false)} onOuvrirDM={ouvrirDM} />
+      <MembersPanel world={worldActif} moi={moi} onFermer={() => setShowMembers(false)} onOuvrirDM={ouvrirDM} dmUnreadByMxid={dmUnreadByMxid} />
     )
   } else if (roomsOuvertes.length > 0) {
     contenuPrincipal = (
@@ -195,6 +225,7 @@ export default function MainLayout({ moi, onDeconnexion }) {
         onDeconnexion={onDeconnexion}
         onNetwork={basculerNetwork}
         showNetwork={showNetwork}
+        onSettings={() => setShowSettings(true)}
       />
 
       {!showNetwork && (
@@ -202,10 +233,17 @@ export default function MainLayout({ moi, onDeconnexion }) {
           world={worldActif}
           moi={moi}
           roomActiveIds={roomIds}
+          unreadCounts={unreadCounts}
+          dmUnreadTotal={dmUnreadTotal}
           onEntrerRoom={entrerRoom}
           onWorldMisAJour={() => chargerWorldComplet(worldActif?.id)}
           onOuvrirMembers={ouvrirMembers}
           onOuvrirDM={ouvrirDM}
+          onOuvrirDocs={(type, id, nom) => {
+            setDocsScope({ type, id, nom })
+            setShowMembers(false)
+            setDmDestinataire(null)
+          }}
         />
       )}
 
@@ -216,6 +254,18 @@ export default function MainLayout({ moi, onDeconnexion }) {
       {creerWorld && (
         <CreateWorldModal onCree={onWorldCree} onFermer={() => setCreerWorld(false)} />
       )}
+
+      {showSettings && (
+        <SettingsModal
+          moi={moi}
+          onSauvegarde={user => { onMoiUpdate(user); setShowSettings(false) }}
+          onDeconnexion={onDeconnexion}
+          onFermer={() => setShowSettings(false)}
+        />
+      )}
+
+      <Toast />
+      <SyncStatus />
     </div>
   )
 }

@@ -3,8 +3,11 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
 from models.building import Building, Room
+from models.world import Member
+from models.user import User
 from routers.auth import get_current_user
 import uuid
+import services.matrix_service as matrix
 
 router = APIRouter()
 
@@ -55,13 +58,41 @@ class UpdateRoom(BaseModel):
 
 # ── Rooms (avant /{building_id} pour éviter conflits) ────────────────────────
 
+def _mxids_membres_world(world_id: str, db: Session) -> list[str]:
+    """Retourne les MXID Matrix de tous les membres d'un world."""
+    membres = db.query(Member).filter(Member.world_id == world_id).all()
+    user_ids = [m.user_id for m in membres]
+    users = db.query(User).filter(User.id.in_(user_ids)).all()
+    return [u.matrix_user_id for u in users if u.matrix_user_id]
+
+
 @router.post("/rooms")
-def creer_room(data: CreerRoom, db: Session = Depends(get_db)):
+def creer_room(data: CreerRoom, db: Session = Depends(get_db), user=Depends(get_current_user)):
     room = Room(id=str(uuid.uuid4()), **data.model_dump())
     db.add(room)
+    db.flush()
+
+    # Créer la Matrix Room correspondante
+    building = db.query(Building).filter(Building.id == data.building_id).first()
+    if building:
+        creator = db.query(User).filter(User.id == user["id"]).first()
+        creator_mxid = creator.matrix_user_id if creator else None
+        if creator_mxid:
+            mxids = _mxids_membres_world(building.world_id, db)
+            matrix_room_id = matrix.create_room(
+                room_id=room.id,
+                room_name=f"{data.emoji} {data.nom}",
+                creator_mxid=creator_mxid,
+                invited_mxids=mxids,
+                encrypt=(data.type in ("texte", "mixte")),
+            )
+            if matrix_room_id:
+                room.matrix_room_id = matrix_room_id
+
     db.commit()
     db.refresh(room)
-    return {"id": room.id, "nom": room.nom, "type": room.type, "etage": room.etage, "emoji": room.emoji}
+    return {"id": room.id, "nom": room.nom, "type": room.type, "etage": room.etage,
+            "emoji": room.emoji, "matrix_room_id": room.matrix_room_id}
 
 @router.patch("/rooms/{room_id}")
 def modifier_room(room_id: str, data: UpdateRoom, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -86,7 +117,7 @@ def supprimer_room(room_id: str, db: Session = Depends(get_db), user=Depends(get
 # ── Buildings ────────────────────────────────────────────────────────────────
 
 @router.post("/")
-def creer_building(data: CreerBuilding, db: Session = Depends(get_db)):
+def creer_building(data: CreerBuilding, db: Session = Depends(get_db), user=Depends(get_current_user)):
     config = CONFIGS_PAR_TYPE.get(data.type, CONFIGS_PAR_TYPE["maison"])
     building = Building(
         id=str(uuid.uuid4()),
@@ -100,16 +131,38 @@ def creer_building(data: CreerBuilding, db: Session = Depends(get_db)):
     )
     db.add(building)
     db.flush()
+
+    # Récupérer le créateur et les membres du world pour les invitations Matrix
+    creator = db.query(User).filter(User.id == user["id"]).first()
+    creator_mxid = creator.matrix_user_id if creator else None
+    mxids = _mxids_membres_world(data.world_id, db) if creator_mxid else []
+
     for i, r in enumerate(config["rooms_defaut"]):
-        db.add(Room(
+        room = Room(
             id=str(uuid.uuid4()),
             building_id=building.id,
             nom=r["nom"], type=r["type"],
             emoji=r["emoji"], etage=r["etage"], position=i,
-        ))
+        )
+        db.add(room)
+        db.flush()
+
+        # Créer la Matrix Room pour chaque room par défaut
+        if creator_mxid:
+            matrix_room_id = matrix.create_room(
+                room_id=room.id,
+                room_name=f"{r['emoji']} {r['nom']}",
+                creator_mxid=creator_mxid,
+                invited_mxids=mxids,
+                encrypt=(r["type"] in ("texte", "mixte")),
+            )
+            if matrix_room_id:
+                room.matrix_room_id = matrix_room_id
+
     db.commit()
     db.refresh(building)
-    rooms = [{"id": r.id, "nom": r.nom, "type": r.type, "etage": r.etage, "emoji": r.emoji} for r in building.rooms]
+    rooms = [{"id": r.id, "nom": r.nom, "type": r.type, "etage": r.etage,
+              "emoji": r.emoji, "matrix_room_id": r.matrix_room_id} for r in building.rooms]
     return {"id": building.id, "nom": building.nom, "type": building.type,
             "emoji": building.emoji, "couleur": building.couleur, "rooms": rooms}
 

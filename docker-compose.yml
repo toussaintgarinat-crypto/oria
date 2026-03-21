@@ -20,13 +20,42 @@ services:
       LIVEKIT_URL: ws://livekit:7880
       LIVEKIT_API_KEY: devkey
       LIVEKIT_API_SECRET: devsecret_oria_local_dev_key_32chars
+      MATRIX_HOMESERVER_URL: http://synapse:8008
+      MATRIX_SERVER_NAME: oria.local
+      MATRIX_AS_TOKEN: "5c95b040fc487db2901d458463a84b187a521e647e6d2ad14a7fe8d4a4eac097"
+      MATRIX_HS_TOKEN: "216582996e3addbb9eba6327a3fa3a3760c11da3226b6aa3f3cce2b2a87445f1"
     depends_on:
       - db
       - livekit
+      - synapse
     volumes:
       - ./backend:/app
       - uploads_data:/app/uploads
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  synapse:
+    image: matrixdotorg/synapse:latest
+    ports:
+      - "8008:8008"
+    volumes:
+      - ./matrix/homeserver.yaml:/data/homeserver.yaml
+      - ./matrix/appservice.yaml:/data/appservice.yaml
+      - ./matrix/log.config:/data/oria.local.log.config
+      - synapse_data:/data
+    depends_on:
+      - synapse_db
+    environment:
+      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
+
+  synapse_db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: synapse
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: synapse_secret
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - synapse_pg_data:/var/lib/postgresql/data
 
   frontend:
     build: ./frontend
@@ -36,6 +65,7 @@ services:
       VITE_API_URL: http://localhost:8000
       VITE_WS_URL: ws://localhost:8000
       VITE_LIVEKIT_URL: ws://localhost:7880
+      VITE_MATRIX_URL: http://localhost:8008
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -54,3 +84,5 @@ services:
 volumes:
   postgres_data:
   uploads_data:
+  synapse_data:
+  synapse_pg_data:

@@ -1,37 +1,31 @@
 import { useState, useEffect, useRef } from 'react'
 import { LiveKitRoom } from '@livekit/components-react'
 import { api } from '../services/api.js'
+import { useMatrixRoom } from '../hooks/useMatrixRoom.js'
+import { getMatrixClient } from '../services/matrixClient.js'
 import VocalSalon from './VocalSalon.jsx'
 
 const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880'
-const WS_URL      = import.meta.env.VITE_WS_URL      || 'ws://localhost:8000'
 const API_URL     = import.meta.env.VITE_API_URL      || 'http://localhost:8000'
 
 const EMOJIS_REACTION = ['👍','❤️','😂','😮','😢','🔥','🎉','👏']
 
 export default function RoomView({ room, building, world, moi, onQuitter }) {
-  const [messages, setMessages]   = useState([])
-  const [texte, setTexte]         = useState('')
   const [token, setToken]         = useState(null)
   const [onglet, setOnglet]       = useState(room.type === 'texte' ? 'chat' : 'vocal')
   const [fichiers, setFichiers]   = useState([])
   const [emojiPickerId, setEmojiPickerId] = useState(null)
-  const wsRef    = useRef(null)
-  const basRef   = useRef(null)
-  const fileRef  = useRef(null)
+  const [texte, setTexte]         = useState('')
+  const basRef = useRef(null)
+  const fileRef = useRef(null)
+
+  const matrix   = useMatrixRoom(room.matrix_room_id)
+  const messages = matrix.messages
 
   useEffect(() => {
-    chargerMessages()
     chargerFichiers()
     if (room.type !== 'texte') obtenirToken()
-    connecterWS()
-    return () => wsRef.current?.close()
   }, [room.id])
-
-  async function chargerMessages() {
-    const data = await api.get(`/messages/${room.id}`)
-    if (Array.isArray(data)) setMessages(data)
-  }
 
   async function chargerFichiers() {
     const data = await api.get(`/files/room/${room.id}`)
@@ -43,43 +37,27 @@ export default function RoomView({ room, building, world, moi, onQuitter }) {
     setToken(data.token)
   }
 
-  function connecterWS() {
-    const ws = new WebSocket(`${WS_URL}/api/messages/ws/${room.id}`)
-    ws.onmessage = (e) => {
-      const data = JSON.parse(e.data)
-      if (data.type === 'delete') {
-        setMessages(prev => prev.filter(m => m.id !== data.message_id))
-      } else if (data.type === 'reaction') {
-        setMessages(prev => prev.map(m =>
-          m.id === data.message_id ? { ...m, reactions: data.reactions } : m
-        ))
-      } else {
-        setMessages(prev => [...prev, data])
-      }
-    }
-    wsRef.current = ws
-  }
-
   async function envoyer(e) {
     e.preventDefault()
-    if (!texte.trim()) return
-    await api.post('/messages/', {
-      room_id: room.id,
-      author_id: moi.id,
-      author_nom: moi.nom,
-      author_emoji: moi.avatar_emoji,
-      contenu: texte.trim(),
+    if (!texte.trim() || !matrix.disponible) return
+
+    const client = getMatrixClient()
+    await client.sendEvent(room.matrix_room_id, 'm.room.message', {
+      msgtype: 'm.text',
+      body: texte.trim(),
+      'io.oria.nom':   moi.nom,
+      'io.oria.emoji': moi.avatar_emoji,
     })
     setTexte('')
   }
 
   async function supprimerMessage(id) {
-    await api.del(`/messages/${id}`)
+    await matrix.supprimer(id)
   }
 
   async function reagir(messageId, emoji) {
     setEmojiPickerId(null)
-    await api.post(`/messages/${messageId}/reactions`, { emoji, user_id: moi.id, user_nom: moi.nom })
+    await matrix.reagir(messageId, emoji)
   }
 
   async function uploaderFichier(e) {
@@ -91,7 +69,7 @@ export default function RoomView({ room, building, world, moi, onQuitter }) {
     form.append('uploader_nom', moi.nom)
     const res = await fetch(`${API_URL}/api/files/upload/${room.id}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('oria_token')}` },
       body: form,
     })
     if (res.ok) chargerFichiers()
@@ -111,6 +89,7 @@ export default function RoomView({ room, building, world, moi, onQuitter }) {
         <div className="room-header-info">
           <span>{room.emoji}</span>
           <span className="room-header-nom">{room.nom}</span>
+          {matrix.disponible && <span title="Messages chiffrés E2EE" style={{ fontSize: 11, color: '#57F287' }}>🔒</span>}
           <span className="room-header-building" style={{ color: building.couleur }}>
             {building.emoji} {building.nom}
           </span>
@@ -177,9 +156,9 @@ export default function RoomView({ room, building, world, moi, onQuitter }) {
             )}
 
             {messages.map((m, i) => {
-              const precedent = messages[i - 1]
+              const precedent  = messages[i - 1]
               const memeAuteur = precedent?.author_nom === m.author_nom
-              const isMoi = m.author_id === moi.id
+              const isMoi      = m.author_id === getMatrixClient()?.getUserId()
               return (
                 <div key={m.id} className={`message ${memeAuteur ? 'groupe' : ''}`}>
                   {!memeAuteur && (

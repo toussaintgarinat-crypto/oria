@@ -1,59 +1,41 @@
 import { useState, useEffect, useRef } from 'react'
-import { api } from '../services/api.js'
-
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
+import { useMatrixDM } from '../hooks/useMatrixDM.js'
 
 export default function DMPanel({ world, moi, destinataire, onFermer }) {
-  const [messages, setMessages] = useState([])
   const [texte, setTexte] = useState('')
-  const wsRef = useRef(null)
-  const bottomRef = useRef(null)
+  const bottomRef         = useRef(null)
 
-  useEffect(() => {
-    chargerMessages()
-    const ws = new WebSocket(`${WS_URL}/api/dm/ws/${moi.id}`)
-    wsRef.current = ws
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data)
-      if (
-        (msg.from_user_id === destinataire.user_id && msg.to_user_id === moi.id) ||
-        (msg.from_user_id === moi.id && msg.to_user_id === destinataire.user_id)
-      ) {
-        setMessages(prev => [...prev, msg])
-      }
-    }
-    return () => ws.close()
-  }, [destinataire.user_id])
+  const matrix   = useMatrixDM(destinataire.matrix_user_id || null)
+  const messages = matrix.messages
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  async function chargerMessages() {
-    const data = await api.get(`/dm/${world.id}/${destinataire.user_id}`)
-    if (Array.isArray(data)) setMessages(data)
-  }
-
   async function envoyer(e) {
     e.preventDefault()
-    if (!texte.trim()) return
-    await api.post('/dm/', {
-      world_id: world.id,
-      to_user_id: destinataire.user_id,
-      contenu: texte.trim(),
-    })
+    if (!texte.trim() || !matrix.disponible) return
+    await matrix.envoyer(texte, moi)
     setTexte('')
   }
 
   return (
     <div className="dm-panel">
       <div className="dm-panel-header">
-        <span>{destinataire.avatar_emoji} {destinataire.nom}</span>
+        <span>
+          {destinataire.avatar_emoji} {destinataire.nom}
+          {matrix.disponible && <span title="Chiffré Matrix" style={{ fontSize: 11, color: '#57F287', marginLeft: 6 }}>🔒</span>}
+        </span>
         <button className="btn-quitter-room" onClick={onFermer}>✕</button>
       </div>
+
+      {matrix.chargement && (
+        <div style={{ padding: 16, color: '#72767d', fontSize: 13 }}>Connexion au canal sécurisé…</div>
+      )}
+
       <div className="dm-messages">
         {messages.map((m, i) => {
-          const isMe = m.from_user_id === moi.id
+          const isMe = m.from_user_id === localStorage.getItem('matrix_user_id')
           return (
             <div key={m.id ?? i} className={`dm-message ${isMe ? 'moi' : ''}`}>
               {!isMe && <span className="dm-avatar">{m.from_emoji}</span>}
@@ -66,12 +48,14 @@ export default function DMPanel({ world, moi, destinataire, onFermer }) {
         })}
         <div ref={bottomRef} />
       </div>
+
       <form className="dm-form" onSubmit={envoyer}>
         <input
           value={texte}
           onChange={e => setTexte(e.target.value)}
           placeholder={`Message à ${destinataire.nom}…`}
           autoFocus
+          disabled={matrix.chargement}
         />
         <button type="submit" disabled={!texte.trim()}>➤</button>
       </form>

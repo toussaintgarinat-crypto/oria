@@ -9,5 +9,8 @@ class User(Base):
     email           = Column(String, unique=True, nullable=False)
     nom             = Column(String, nullable=False)
     avatar_emoji    = Column(String, default="👤")
-    hashed_password = Column(String, nullable=False)
-    created_at      = Column(DateTime, default=datetime.utcnow)
+    hashed_password      = Column(String, nullable=False)
+    created_at           = Column(DateTime, default=datetime.utcnow)
+    matrix_user_id       = Column(String, nullable=True)   # "@oria_<uuid>:oria.local"
+    matrix_access_token  = Column(String, nullable=True)
+    matrix_provisioned   = Column(String, default="false") # "true" | "false" | "error"

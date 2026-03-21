@@ -9,9 +9,9 @@ import EditQuartierModal from './EditQuartierModal.jsx'
 import InviteModal from './InviteModal.jsx'
 
 export default function ChannelPanel({
-  world, moi, roomActiveIds,
+  world, moi, roomActiveIds, unreadCounts, dmUnreadTotal,
   onEntrerRoom, onWorldMisAJour,
-  onOuvrirMembers, onOuvrirDM,
+  onOuvrirMembers, onOuvrirDM, onOuvrirDocs,
 }) {
   const [collapsed, setCollapsed]         = useState({})
   const [creerBuilding, setCreerBuilding] = useState(false)
@@ -71,8 +71,18 @@ export default function ChannelPanel({
           {estProprietaire && (
             <button className="channel-panel-icon-btn" onClick={() => setShowInvite(true)} title="Inviter">✉</button>
           )}
-          <button className="channel-panel-icon-btn" onClick={onOuvrirMembers} title="Membres">
+          <button
+            className="channel-panel-icon-btn"
+            onClick={() => onOuvrirDocs?.('world', world.id, world.nom)}
+            title="Documents du monde"
+          >📁</button>
+          <button className="channel-panel-icon-btn" onClick={onOuvrirMembers} title="Membres" style={{ position: 'relative' }}>
             👥 <span>{world.membres?.length || 0}</span>
+            {dmUnreadTotal > 0 && (
+              <span className="unread-badge" style={{ position: 'absolute', top: -4, right: -4 }}>
+                {dmUnreadTotal > 99 ? '99+' : dmUnreadTotal}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -89,7 +99,9 @@ export default function ChannelPanel({
             )}
             buildings={buildingsLibres}
             roomActiveIds={roomActiveIds}
+            unreadCounts={unreadCounts}
             onEntrerRoom={onEntrerRoom}
+            onOuvrirDocs={onOuvrirDocs}
             estProprietaire={estProprietaire}
             onEditerBuilding={b => setEditBuilding(b)}
             onSupprimerBuilding={supprimerBuilding}
@@ -123,7 +135,9 @@ export default function ChannelPanel({
                 rooms={b.rooms || []}
                 buildings={null}
                 roomActiveIds={roomActiveIds}
+                unreadCounts={unreadCounts}
                 onEntrerRoom={r => onEntrerRoom(r, b)}
+                onOuvrirDocs={onOuvrirDocs}
                 estProprietaire={estProprietaire}
                 onEditerBuilding={() => setEditBuilding(b)}
                 onSupprimerBuilding={() => supprimerBuilding(b)}
@@ -191,9 +205,10 @@ export default function ChannelPanel({
 /* ── Section bâtiment ── */
 function BuildingSection({
   building, rooms, buildings,
-  roomActiveIds, onEntrerRoom, estProprietaire,
+  roomActiveIds, unreadCounts, onEntrerRoom, estProprietaire,
   onEditerBuilding, onSupprimerBuilding, onAjouterRoom,
   onEditerRoom, onSupprimerRoom,
+  onOuvrirDocs,
   collapsed, toggleCollapse,
 }) {
   // Si buildings est fourni, on affiche plusieurs bâtiments sans header de quartier
@@ -205,6 +220,7 @@ function BuildingSection({
         rooms={b.rooms || []}
         buildings={null}
         roomActiveIds={roomActiveIds}
+        unreadCounts={unreadCounts}
         onEntrerRoom={r => onEntrerRoom(r, b)}
         estProprietaire={estProprietaire}
         onEditerBuilding={() => onEditerBuilding(b)}
@@ -212,6 +228,7 @@ function BuildingSection({
         onAjouterRoom={() => onAjouterRoom(b)}
         onEditerRoom={onEditerRoom}
         onSupprimerRoom={onSupprimerRoom}
+        onOuvrirDocs={onOuvrirDocs}
         collapsed={collapsed}
         toggleCollapse={toggleCollapse}
       />
@@ -228,13 +245,17 @@ function BuildingSection({
           <span className="channel-category-arrow">{isCollapsed ? '▶' : '▼'}</span>
           <span className="channel-category-emoji">{building.emoji}</span>
           <span className="channel-category-nom">{building.nom}</span>
-          {estProprietaire && (
-            <div className="channel-category-actions" onClick={e => e.stopPropagation()}>
+          <div className="channel-category-actions" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => onOuvrirDocs?.('building', building.id, building.nom)}
+              title="Documents du bâtiment"
+            >📁</button>
+            {estProprietaire && (<>
               <button onClick={onAjouterRoom} title="Ajouter une pièce">＋</button>
               <button onClick={onEditerBuilding} title="Modifier">✎</button>
               <button onClick={onSupprimerBuilding} title="Supprimer">✕</button>
-            </div>
-          )}
+            </>)}
+          </div>
         </div>
       )}
 
@@ -243,12 +264,14 @@ function BuildingSection({
           {rooms.map(room => {
             const icone = room.type === 'vocal' ? '🔊' : room.type === 'texte' ? '💬' : '⚡'
             const actif = roomActiveIds?.has(room.id)
+            const unread = room.matrix_room_id ? (unreadCounts?.[room.matrix_room_id] || 0) : 0
             return (
-              <div key={room.id} className={`channel-room-item ${actif ? 'actif' : ''}`}>
+              <div key={room.id} className={`channel-room-item ${actif ? 'actif' : ''} ${unread > 0 ? 'has-unread' : ''}`}>
                 <button className="channel-room-btn" onClick={() => onEntrerRoom(room)}>
                   <span className="channel-room-icone">{icone}</span>
                   <span className="channel-room-nom">{room.nom}</span>
                   {actif && <span className="channel-room-open-dot" />}
+                  {unread > 0 && !actif && <span className="unread-badge">{unread > 99 ? '99+' : unread}</span>}
                 </button>
                 {estProprietaire && (
                   <div className="channel-room-actions">

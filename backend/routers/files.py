@@ -8,8 +8,13 @@ from datetime import datetime
 import uuid, os, shutil
 
 router = APIRouter()
-UPLOAD_DIR = "/app/uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+_default_upload = "/app/uploads"
+try:
+    os.makedirs(_default_upload, exist_ok=True)
+    UPLOAD_DIR = _default_upload
+except OSError:
+    UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/upload/{room_id}")
 async def upload_file(room_id: str, file: UploadFile = FastAPIFile(...),
@@ -37,7 +42,8 @@ async def upload_file(room_id: str, file: UploadFile = FastAPIFile(...),
 def lister_fichiers(room_id: str, db: Session = Depends(get_db)):
     files = db.query(File).filter(File.room_id == room_id).order_by(File.created_at.desc()).all()
     return [{"id": f.id, "nom": f.nom, "taille": f.taille, "type_mime": f.type_mime,
-             "uploader_nom": f.uploader_nom, "created_at": f.created_at} for f in files]
+             "uploader_nom": f.uploader_nom, "uploaded_by": f.uploaded_by,
+             "created_at": f.created_at} for f in files]
 
 @router.get("/download/{file_id}")
 def telecharger(file_id: str, db: Session = Depends(get_db)):
@@ -48,6 +54,60 @@ def telecharger(file_id: str, db: Session = Depends(get_db)):
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Fichier manquant")
     return FileResponse(path, filename=f.nom, media_type=f.type_mime)
+
+@router.post("/upload/building/{building_id}")
+async def upload_building(building_id: str, file: UploadFile = FastAPIFile(...),
+                          db: Session = Depends(get_db), user=Depends(get_current_user)):
+    ext = os.path.splitext(file.filename or "")[1]
+    file_id = str(uuid.uuid4())
+    path = os.path.join(UPLOAD_DIR, f"{file_id}{ext}")
+    with open(path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    size = os.path.getsize(path)
+    db_file = File(id=file_id, building_id=building_id,
+                   uploaded_by=user["id"], uploader_nom=user["nom"],
+                   nom=file.filename or f"{file_id}{ext}", taille=size,
+                   type_mime=file.content_type or "application/octet-stream",
+                   path=f"{file_id}{ext}", created_at=datetime.utcnow().isoformat())
+    db.add(db_file); db.commit(); db.refresh(db_file)
+    return {"id": db_file.id, "nom": db_file.nom, "taille": db_file.taille,
+            "type_mime": db_file.type_mime, "building_id": building_id,
+            "uploader_nom": db_file.uploader_nom, "uploaded_by": db_file.uploaded_by,
+            "created_at": db_file.created_at}
+
+@router.get("/building/{building_id}")
+def lister_building(building_id: str, db: Session = Depends(get_db)):
+    files = db.query(File).filter(File.building_id == building_id).order_by(File.created_at.desc()).all()
+    return [{"id": f.id, "nom": f.nom, "taille": f.taille, "type_mime": f.type_mime,
+             "uploader_nom": f.uploader_nom, "uploaded_by": f.uploaded_by,
+             "created_at": f.created_at} for f in files]
+
+@router.post("/upload/world/{world_id}")
+async def upload_world(world_id: str, file: UploadFile = FastAPIFile(...),
+                       db: Session = Depends(get_db), user=Depends(get_current_user)):
+    ext = os.path.splitext(file.filename or "")[1]
+    file_id = str(uuid.uuid4())
+    path = os.path.join(UPLOAD_DIR, f"{file_id}{ext}")
+    with open(path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    size = os.path.getsize(path)
+    db_file = File(id=file_id, world_id=world_id,
+                   uploaded_by=user["id"], uploader_nom=user["nom"],
+                   nom=file.filename or f"{file_id}{ext}", taille=size,
+                   type_mime=file.content_type or "application/octet-stream",
+                   path=f"{file_id}{ext}", created_at=datetime.utcnow().isoformat())
+    db.add(db_file); db.commit(); db.refresh(db_file)
+    return {"id": db_file.id, "nom": db_file.nom, "taille": db_file.taille,
+            "type_mime": db_file.type_mime, "world_id": world_id,
+            "uploader_nom": db_file.uploader_nom, "uploaded_by": db_file.uploaded_by,
+            "created_at": db_file.created_at}
+
+@router.get("/world/{world_id}")
+def lister_world(world_id: str, db: Session = Depends(get_db)):
+    files = db.query(File).filter(File.world_id == world_id).order_by(File.created_at.desc()).all()
+    return [{"id": f.id, "nom": f.nom, "taille": f.taille, "type_mime": f.type_mime,
+             "uploader_nom": f.uploader_nom, "uploaded_by": f.uploaded_by,
+             "created_at": f.created_at} for f in files]
 
 @router.delete("/{file_id}")
 def supprimer_fichier(file_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):

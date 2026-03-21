@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
+from typing import Optional
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
 from models.user import User
 from passlib.context import CryptContext
 from jose import jwt, JWTError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
+import services.matrix_service as matrix
 
 router = APIRouter()
 
@@ -27,6 +29,10 @@ class Inscription(BaseModel):
 class Connexion(BaseModel):
     email: str
     password: str
+
+class MiseAJourProfil(BaseModel):
+    nom: Optional[str] = None
+    avatar_emoji: Optional[str] = None
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -75,10 +81,50 @@ def register(data: Inscription, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
+    # Provisioning Matrix (dégradé si Synapse indisponible)
+    matrix_data = matrix.provision_user(user.id)
+    if matrix_data:
+        user.matrix_user_id      = matrix_data["user_id"]
+        user.matrix_access_token = matrix_data["access_token"]
+        user.matrix_provisioned  = "true"
+        db.commit()
+
     token = creer_token(user)
     return {
         "token": token,
         "user": {"id": user.id, "nom": user.nom, "avatar_emoji": user.avatar_emoji},
+        "matrix_user_id":      user.matrix_user_id,
+        "matrix_access_token": user.matrix_access_token,
+    }
+
+@router.post("/refresh")
+def refresh_token(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Renouvelle le token JWT pour 30 jours supplémentaires."""
+    db_user = db.query(User).filter(User.id == user["id"]).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    token = creer_token(db_user)
+    return {
+        "token": token,
+        "user": {"id": db_user.id, "nom": db_user.nom, "avatar_emoji": db_user.avatar_emoji},
+    }
+
+@router.patch("/me")
+def update_profil(data: MiseAJourProfil, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Modifier nom et/ou avatar_emoji. Retourne un nouveau token JWT."""
+    db_user = db.query(User).filter(User.id == user["id"]).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    if data.nom is not None:
+        db_user.nom = data.nom.strip()
+    if data.avatar_emoji is not None:
+        db_user.avatar_emoji = data.avatar_emoji
+    db.commit()
+    db.refresh(db_user)
+    token = creer_token(db_user)
+    return {
+        "token": token,
+        "user": {"id": db_user.id, "nom": db_user.nom, "avatar_emoji": db_user.avatar_emoji},
     }
 
 @router.post("/login")
@@ -88,8 +134,19 @@ def login(data: Connexion, db: Session = Depends(get_db)):
     if not user or not pwd_context.verify(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
 
+    # Si le compte Matrix n'a pas encore été provisionné, réessayer
+    if not user.matrix_provisioned or user.matrix_provisioned != "true":
+        matrix_data = matrix.provision_user(user.id)
+        if matrix_data:
+            user.matrix_user_id      = matrix_data["user_id"]
+            user.matrix_access_token = matrix_data["access_token"]
+            user.matrix_provisioned  = "true"
+            db.commit()
+
     token = creer_token(user)
     return {
         "token": token,
         "user": {"id": user.id, "nom": user.nom, "avatar_emoji": user.avatar_emoji},
+        "matrix_user_id":      user.matrix_user_id,
+        "matrix_access_token": user.matrix_access_token,
     }

@@ -18,6 +18,7 @@ class Building(Base):
     world       = relationship("World", back_populates="buildings")
     quartier    = relationship("Quartier", back_populates="buildings")
     rooms       = relationship("Room", back_populates="building", cascade="all, delete", order_by="Room.etage, Room.position")
+    files       = relationship("File", back_populates="building", cascade="all, delete")
 
 class Room(Base):
     __tablename__ = "rooms"
@@ -27,10 +28,11 @@ class Room(Base):
     type        = Column(String, default="mixte")
     etage       = Column(Integer, default=0)
     position    = Column(Integer, default=0)
-    emoji       = Column(String, default="💬")
-    building    = relationship("Building", back_populates="rooms")
-    messages    = relationship("Message", back_populates="room", cascade="all, delete")
-    files       = relationship("File", back_populates="room", cascade="all, delete")
+    emoji          = Column(String, default="💬")
+    matrix_room_id = Column(String, nullable=True)  # "!xxx:oria.local"
+    building       = relationship("Building", back_populates="rooms")
+    messages       = relationship("Message", back_populates="room", cascade="all, delete")
+    files          = relationship("File", back_populates="room", cascade="all, delete")
 
 class Message(Base):
     __tablename__ = "messages"
@@ -56,7 +58,9 @@ class Reaction(Base):
 class File(Base):
     __tablename__ = "files"
     id           = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    room_id      = Column(String, ForeignKey("rooms.id"), nullable=False)
+    room_id      = Column(String, ForeignKey("rooms.id"), nullable=True)      # room attachment
+    building_id  = Column(String, ForeignKey("buildings.id"), nullable=True)  # building doc
+    world_id     = Column(String, nullable=True)                              # world doc (pas de FK pour éviter import circulaire)
     uploaded_by  = Column(String, nullable=False)
     uploader_nom = Column(String, nullable=False)
     nom          = Column(String, nullable=False)
@@ -65,3 +69,4 @@ class File(Base):
     path         = Column(String, nullable=False)
     created_at   = Column(String, nullable=False)
     room         = relationship("Room", back_populates="files")
+    building     = relationship("Building", back_populates="files")

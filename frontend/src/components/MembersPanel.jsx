@@ -1,29 +1,14 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api.js'
+import { useMatrixPresence } from '../hooks/useMatrixPresence.js'
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
 const ROLE_LABELS = { proprietaire: '👑 ', admin: '🛡 ', membre: '' }
 
-export default function MembersPanel({ world, moi, onFermer, onOuvrirDM }) {
+export default function MembersPanel({ world, moi, onFermer, onOuvrirDM, dmUnreadByMxid }) {
   const [membres, setMembres] = useState([])
-  const [presence, setPresence] = useState({})
 
   useEffect(() => {
     chargerMembres()
-    const ws = new WebSocket(`${WS_URL}/api/presence/ws/${world.id}/${moi.id}`)
-    ws.onmessage = (e) => {
-      const data = JSON.parse(e.data)
-      if (data.type === 'snapshot') {
-        const p = {}
-        data.users?.forEach(u => { p[u.user_id] = u })
-        setPresence(p)
-      } else if (data.type === 'join') {
-        setPresence(prev => ({ ...prev, [data.user_id]: data }))
-      } else if (data.type === 'leave') {
-        setPresence(prev => { const n = { ...prev }; delete n[data.user_id]; return n })
-      }
-    }
-    return () => ws.close()
   }, [world.id])
 
   async function chargerMembres() {
@@ -31,8 +16,9 @@ export default function MembersPanel({ world, moi, onFermer, onOuvrirDM }) {
     if (Array.isArray(data)) setMembres(data)
   }
 
-  const enLigne  = membres.filter(m => presence[m.user_id])
-  const horsLigne = membres.filter(m => !presence[m.user_id])
+  const presence  = useMatrixPresence(membres)
+  const enLigne   = membres.filter(m => presence[m.user_id]?.presence === 'online')
+  const horsLigne = membres.filter(m => !enLigne.includes(m))
 
   return (
     <div className="members-panel">
@@ -44,13 +30,17 @@ export default function MembersPanel({ world, moi, onFermer, onOuvrirDM }) {
         {enLigne.length > 0 && (
           <>
             <p className="members-section-label">En ligne — {enLigne.length}</p>
-            {enLigne.map(m => <MemberRow key={m.user_id} m={m} enligne presence={presence[m.user_id]} moi={moi} onDM={onOuvrirDM} />)}
+            {enLigne.map(m => (
+              <MemberRow key={m.user_id} m={m} enligne presence={presence[m.user_id]} moi={moi} onDM={onOuvrirDM} dmUnread={dmUnreadByMxid?.[m.matrix_user_id] || 0} />
+            ))}
           </>
         )}
         {horsLigne.length > 0 && (
           <>
             <p className="members-section-label">Hors ligne — {horsLigne.length}</p>
-            {horsLigne.map(m => <MemberRow key={m.user_id} m={m} enligne={false} moi={moi} onDM={onOuvrirDM} />)}
+            {horsLigne.map(m => (
+              <MemberRow key={m.user_id} m={m} enligne={false} moi={moi} onDM={onOuvrirDM} dmUnread={dmUnreadByMxid?.[m.matrix_user_id] || 0} />
+            ))}
           </>
         )}
       </div>
@@ -58,7 +48,7 @@ export default function MembersPanel({ world, moi, onFermer, onOuvrirDM }) {
   )
 }
 
-function MemberRow({ m, enligne, presence, moi, onDM }) {
+function MemberRow({ m, enligne, presence, moi, onDM, dmUnread }) {
   const isMoi = m.user_id === moi.id
   return (
     <div className={`member-item ${enligne ? '' : 'offline'}`}>
@@ -75,7 +65,14 @@ function MemberRow({ m, enligne, presence, moi, onDM }) {
         {presence?.room_id && <span className="member-location">Dans une pièce</span>}
       </div>
       {!isMoi && onDM && (
-        <button className="btn-dm" onClick={() => onDM(m)} title="Message privé">✉</button>
+        <button className="btn-dm" onClick={() => onDM(m)} title="Message privé" style={{ position: 'relative' }}>
+          ✉
+          {dmUnread > 0 && (
+            <span className="unread-badge" style={{ position: 'absolute', top: -4, right: -4 }}>
+              {dmUnread > 99 ? '99+' : dmUnread}
+            </span>
+          )}
+        </button>
       )}
     </div>
   )
