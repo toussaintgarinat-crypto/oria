@@ -9,34 +9,9 @@ import models.llm_config
 from routers import worlds, buildings, rooms, tokens, auth, quartiers
 from routers import invitations, files as files_router, network as network_router
 from routers import matrix_as
-from sqlalchemy import text
 import os
 
 Base.metadata.create_all(bind=engine)
-
-# Migration légère — ajoute les colonnes si elles n'existent pas encore
-def _migrate():
-    nouvelles_colonnes = [
-        ("files",          "building_id",    "TEXT"),
-        ("files",          "world_id",       "TEXT"),
-        ("deliberations",  "workflow_statut","VARCHAR DEFAULT 'brouillon'"),
-        ("arretes",        "workflow_statut","VARCHAR DEFAULT 'brouillon'"),
-        ("tickets",        "lat",            "VARCHAR"),
-        ("tickets",        "lng",            "VARCHAR"),
-        ("deliberations",  "reseau_visible", "BOOLEAN DEFAULT 0"),
-        ("arretes",        "reseau_visible", "BOOLEAN DEFAULT 0"),
-        ("users",          "totp_secret",    "VARCHAR"),
-        ("users",          "totp_enabled",   "VARCHAR DEFAULT 'false'"),
-    ]
-    with engine.connect() as conn:
-        for table, col, typ in nouvelles_colonnes:
-            try:
-                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {typ}"))
-                conn.commit()
-            except Exception:
-                pass  # colonne déjà présente
-
-_migrate()
 
 app = FastAPI(title="Oria API", version="2.0.0")
 
