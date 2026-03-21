@@ -45,20 +45,21 @@ def provision_user(user_id: str) -> Optional[dict]:
             # Créer le compte via l'Application Service
             resp = client.post(
                 f"{MATRIX_URL}/_matrix/client/v3/register",
-                params={"access_token": AS_TOKEN},
-                json={"username": username, "kind": "user"},
+                headers=_headers_as(),
+                json={"username": username, "type": "m.login.application_service"},
             )
 
             if resp.status_code in (200, 201):
                 data = resp.json()
                 logger.info(f"Compte Matrix créé : {mxid}")
+                # AS registration doesn't return access_token — get one via login
+                token = _get_token_for(user_id)
                 return {
                     "user_id": data.get("user_id", mxid),
-                    "access_token": data.get("access_token", ""),
+                    "access_token": token.get("access_token", "") if token else "",
                 }
 
             if resp.status_code == 400 and resp.json().get("errcode") == "M_USER_IN_USE":
-                # Compte déjà existant — récupérer un token via impersonation
                 logger.info(f"Compte Matrix déjà existant : {mxid}, récupération du token")
                 return _get_token_for(user_id)
 
@@ -77,7 +78,7 @@ def _get_token_for(user_id: str) -> Optional[dict]:
         with httpx.Client(timeout=TIMEOUT) as client:
             resp = client.post(
                 f"{MATRIX_URL}/_matrix/client/v3/login",
-                params={"access_token": AS_TOKEN},
+                headers=_headers_as(),
                 json={
                     "type": "m.login.application_service",
                     "identifier": {"type": "m.id.user", "user": f"oria_{user_id}"},
@@ -124,9 +125,9 @@ def create_room(room_id: str, room_name: str, creator_mxid: str,
         with httpx.Client(timeout=TIMEOUT) as client:
             resp = client.post(
                 f"{MATRIX_URL}/_matrix/client/v3/createRoom",
-                params={"user_id": creator_mxid, "access_token": AS_TOKEN},
-                json=body,
+                params={"user_id": creator_mxid},
                 headers=_headers_as(),
+                json=body,
             )
             if resp.status_code == 200:
                 matrix_room_id = resp.json().get("room_id")
@@ -145,9 +146,9 @@ def invite_to_room(matrix_room_id: str, mxid: str, inviter_mxid: str) -> bool:
         with httpx.Client(timeout=TIMEOUT) as client:
             resp = client.post(
                 f"{MATRIX_URL}/_matrix/client/v3/rooms/{matrix_room_id}/invite",
-                params={"user_id": inviter_mxid, "access_token": AS_TOKEN},
-                json={"user_id": mxid},
+                params={"user_id": inviter_mxid},
                 headers=_headers_as(),
+                json={"user_id": mxid},
             )
             return resp.status_code == 200
     except Exception as e:
@@ -161,14 +162,14 @@ def create_dm_room(mxid_a: str, mxid_b: str) -> Optional[str]:
         with httpx.Client(timeout=TIMEOUT) as client:
             resp = client.post(
                 f"{MATRIX_URL}/_matrix/client/v3/createRoom",
-                params={"user_id": mxid_a, "access_token": AS_TOKEN},
+                params={"user_id": mxid_a},
+                headers=_headers_as(),
                 json={
                     "preset": "trusted_private_chat",
                     "is_direct": True,
                     "invite": [mxid_b],
                     "creation_content": {"m.federate": False},
                 },
-                headers=_headers_as(),
             )
             if resp.status_code == 200:
                 return resp.json().get("room_id")
@@ -187,9 +188,9 @@ def set_presence(mxid: str, presence: str, status_msg: str = "") -> None:
         with httpx.Client(timeout=TIMEOUT) as client:
             client.put(
                 f"{MATRIX_URL}/_matrix/client/v3/presence/{mxid}/status",
-                params={"access_token": AS_TOKEN},
-                json={"presence": presence, "status_msg": status_msg},
+                params={"user_id": mxid},
                 headers=_headers_as(),
+                json={"presence": presence, "status_msg": status_msg},
             )
     except Exception as e:
         logger.error(f"Erreur set_presence {mxid}: {e}")

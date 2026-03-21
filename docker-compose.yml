@@ -38,10 +38,7 @@ services:
     ports:
       - "8008:8008"
     volumes:
-      - ./matrix/homeserver.yaml:/data/homeserver.yaml
-      - ./matrix/appservice.yaml:/data/appservice.yaml
-      - ./matrix/log.config:/data/oria.local.log.config
-      - synapse_data:/data
+      - ./matrix/synapse_data:/data
     depends_on:
       - synapse_db
     environment:
@@ -84,5 +81,4 @@ services:
 volumes:
   postgres_data:
   uploads_data:
-  synapse_data:
   synapse_pg_data:
