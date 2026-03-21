@@ -28,7 +28,7 @@ export default function InviteModal({ world, onFermer }) {
       <div className="modal" onClick={e => e.stopPropagation()}>
         <h2 className="modal-titre">Inviter dans {world.emoji} {world.nom}</h2>
         <p style={{ color: '#72767d', fontSize: 13, marginBottom: 20 }}>
-          Partage ce lien. Toute personne avec ce lien pourra rejoindre ton monde.
+          Partage ce lien. Toute personne avec ce lien pourra rejoindre ta commune.
         </p>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 20, color: '#72767d' }}>Génération...</div>

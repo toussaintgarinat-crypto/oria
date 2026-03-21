@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { api } from '../services/api.js'
 
 const TYPES = [
-  { id: 'filiale',     label: 'Filiale',      color: '#5865F2', desc: 'A possède B' },
-  { id: 'partenaire',  label: 'Partenaire',   color: '#57F287', desc: 'Collaboration' },
-  { id: 'client',      label: 'Client',       color: '#FEE75C', desc: 'A est client de B' },
-  { id: 'fournisseur', label: 'Fournisseur',  color: '#EB459E', desc: 'A est fournisseur de B' },
-  { id: 'association', label: 'Association',  color: '#ED4245', desc: 'Lien associatif' },
+  { id: 'filiale',     label: 'Commune membre',    color: '#5865F2', desc: 'A possède B' },
+  { id: 'partenaire',  label: 'Partenaire',         color: '#57F287', desc: 'Collaboration' },
+  { id: 'client',      label: 'Contractant',        color: '#FEE75C', desc: 'A est client de B' },
+  { id: 'fournisseur', label: 'Prestataire',        color: '#EB459E', desc: 'A est fournisseur de B' },
+  { id: 'association', label: 'EPCI / Groupement',  color: '#ED4245', desc: 'Lien associatif' },
 ]
 
 export default function CreateLinkModal({ mondes, onSave, onFermer }) {
@@ -19,8 +19,8 @@ export default function CreateLinkModal({ mondes, onSave, onFermer }) {
 
   async function creer(e) {
     e.preventDefault()
-    if (!fromId || !toId) { setErreur('Sélectionne les deux mondes.'); return }
-    if (fromId === toId) { setErreur('Les deux mondes doivent être différents.'); return }
+    if (!fromId || !toId) { setErreur('Sélectionne les deux communes.'); return }
+    if (fromId === toId) { setErreur('Les deux communes doivent être différentes.'); return }
     setLoading(true)
     setErreur('')
     const body = { from_world_id: parseInt(fromId), to_world_id: parseInt(toId), type }
@@ -39,7 +39,7 @@ export default function CreateLinkModal({ mondes, onSave, onFermer }) {
       <div className="modal" onClick={e => e.stopPropagation()}>
         <h2 className="modal-titre">🕸 Créer un lien</h2>
         <form onSubmit={creer}>
-          <label>Monde source (A)</label>
+          <label>Commune source (A)</label>
           <select value={fromId} onChange={e => setFromId(e.target.value)} required>
             <option value="">-- Choisir --</option>
             {mondes.map(m => <option key={m.id} value={m.id}>{m.emoji} {m.nom}</option>)}
@@ -58,7 +58,7 @@ export default function CreateLinkModal({ mondes, onSave, onFermer }) {
             ))}
           </div>
 
-          <label>Monde cible (B)</label>
+          <label>Commune cible (B)</label>
           <select value={toId} onChange={e => setToId(e.target.value)} required>
             <option value="">-- Choisir --</option>
             {mondes.filter(m => m.id !== parseInt(fromId)).map(m => (

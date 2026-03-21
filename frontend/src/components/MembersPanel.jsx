@@ -23,7 +23,7 @@ export default function MembersPanel({ world, moi, onFermer, onOuvrirDM, dmUnrea
   return (
     <div className="members-panel">
       <div className="members-panel-header">
-        <span>Membres — {membres.length}</span>
+        <span>Agents &amp; Élus — {membres.length}</span>
         <button className="btn-quitter-room" onClick={onFermer}>✕</button>
       </div>
       <div className="members-list">

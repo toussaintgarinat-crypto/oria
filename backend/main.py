@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 import models.world, models.building, models.user, models.quartier, models.dm, models.network
+import models.mairie
 from routers import worlds, buildings, rooms, tokens, auth, quartiers
 from routers import invitations, files as files_router, network as network_router
 from routers import matrix_as
@@ -55,6 +56,16 @@ app.include_router(quartiers.router,       prefix="/api/quartiers",   tags=["Qua
 app.include_router(invitations.router,     prefix="/api/invitations", tags=["Invitations"])
 app.include_router(files_router.router,    prefix="/api/files",       tags=["Files"])
 app.include_router(network_router.router,  prefix="/api/network",     tags=["Network"])
+from routers.mairie import (deliberations_router, arretes_router, conseils_router,
+    annuaire_router, tickets_router, notifs_router, audit_router, tableau_router)
+app.include_router(deliberations_router, prefix="/api/deliberations", tags=["Délibérations"])
+app.include_router(arretes_router,       prefix="/api/arretes",       tags=["Arrêtés"])
+app.include_router(conseils_router,      prefix="/api/conseils",      tags=["Conseil Municipal"])
+app.include_router(annuaire_router,      prefix="/api/annuaire",      tags=["Annuaire"])
+app.include_router(tickets_router,       prefix="/api/tickets",       tags=["Tickets Citoyens"])
+app.include_router(notifs_router,        prefix="/api/notifs",        tags=["Notifications"])
+app.include_router(audit_router,         prefix="/api/audit",         tags=["Audit"])
+app.include_router(tableau_router,       prefix="/api/tableau-bord",  tags=["Tableau de bord"])
 # Application Service Matrix — montée sans préfixe /api (protocole Matrix)
 app.include_router(matrix_as.router, tags=["Matrix AS"])
 

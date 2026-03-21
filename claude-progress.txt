@@ -1,253 +1,75 @@
 ═══════════════════════════════════════════════════════
-   ORIA — JOURNAL DE BORD
+   ORIA MAIRIE — JOURNAL DE BORD
 ═══════════════════════════════════════════════════════
 
-Dernière mise à jour : 2026-03-20
-Stack : FastAPI + React 18 + Vite + LiveKit + SQLAlchemy + Matrix Synapse (E2EE)
+Dernière mise à jour : 2026-03-21 (session 2)
+Stack : FastAPI + React 18 + Vite + LiveKit + SQLAlchemy + Matrix E2EE
+Repo  : https://github.com/toussaintgarinat-crypto/oria-mairie
 
 ═══════════════════════════════════════════════════════
    ÉTAT ACTUEL
 ═══════════════════════════════════════════════════════
 
-Features totales  : 19
-Features complétées : 14
-Progression       : ~74%
-Bugs critiques ouverts : 0
+Features totales  : 17
+Features complétées : 12
+Progression       : 71%
+
+Base de code héritée d'Oria (communication spatiale) avec :
+✅ Auth JWT (inscription/connexion)
+✅ Worlds (→ Communes) + Buildings (→ Services) + Rooms
+✅ Chat temps réel Matrix E2EE (Synapse)
+✅ Messagerie directe (DMs Matrix)
+✅ Présence online/offline
+✅ Upload de fichiers
+✅ Réseau de mondes (→ Intercommunalité)
+✅ Invitations
+✅ Notifications messages non lus
+✅ Paramètres utilisateur
 
 ═══════════════════════════════════════════════════════
-   FEATURES COMPLÉTÉES ✅
+   SCOPE V1 — À IMPLÉMENTER
 ═══════════════════════════════════════════════════════
 
-[2026-01-01] AUTH-001      — Inscription
-[2026-01-01] AUTH-002      — Connexion
-[2026-01-01] WORLDS-001    — Créer un monde
-[2026-01-01] BUILDINGS-001 — Créer un bâtiment (3 types + rooms auto)
-[2026-01-01] BUILDINGS-002 — Quartiers
-[2026-01-01] ROOMS-001     — Chat texte temps réel
-[2026-01-01] ROOMS-002     — Réactions aux messages
-[2026-01-01] VOCAL-001     — Salon vocal LiveKit
-[2026-01-01] DM-001        — Messages directs
-[2026-01-01] NETWORK-001   — Réseau de mondes (graphe)
-[2026-01-01] INVIT-001     — Liens d'invitation
+PRIORITÉ HAUTE
+✅ UI-001    Renommage domaine mairie (labels UI)
+✅ GED-001   Délibérations (CRUD + PDF + rôles) — backend + frontend
+✅ GED-002   Arrêtés municipaux (CRUD + PDF) — backend + frontend
+✅ GED-003   Accès documents par rôle (flag confidentiel) — backend + frontend
+✅ AGENDA-001 Agenda conseil municipal — backend + frontend
+  AGENDA-002 Convocations automatiques — TODO
+✅ ANNUAIRE-001 Annuaire agents & élus — backend + frontend
+  CITOYEN-001 Portail citoyen (page publique) — TODO
+✅ CITOYEN-002 Gestion tickets citoyens — backend + frontend
+  BROADCAST-001 Canal diffusion maire — TODO
+✅ AUDIT-001  Journalisation des actions — backend + frontend
 
-═══════════════════════════════════════════════════════
-   BUGS CORRIGÉS
-═══════════════════════════════════════════════════════
-
-[2026-03-20] BUG FILES     — RoomView.jsx:94 localStorage.getItem('token')
-                             → corrigé en 'oria_token'
-                             Impact : upload de fichiers cassé
-
-[2026-03-20] BUG PRESENCE  — presence.py:11 type "presence" → "snapshot"
-                             → corrigé pour matcher MembersPanel.jsx:16
-                             Impact : présence online/offline ne fonctionnait pas
-
-═══════════════════════════════════════════════════════
-   À RE-TESTER (bugs fixés)
-═══════════════════════════════════════════════════════
-
-- FILES-001  : Upload de fichiers (fix localStorage key)
-- PRESENCE-001 : Présence online/offline (fix WebSocket type)
-- WORLDS-002   : Membres (dépend de PRESENCE-001)
-
-═══════════════════════════════════════════════════════
-   PROCHAINES PRIORITÉS
-═══════════════════════════════════════════════════════
-
-1. NOTIF-001   — Badges messages non lus (HIGH, MEDIUM)
-2. POLISH-001  — Gestion d'erreurs frontend (MEDIUM, MEDIUM)
-3. SETTINGS-001 — Paramètres utilisateur (LOW, LOW)
-4. POLISH-002  — Reconnexion WebSocket auto (MEDIUM, MEDIUM)
+PRIORITÉ MOYENNE
+✅ UI-002       Thème institutionnel (bleu République) — CSS mairie-panel
+  AGENDA-003   Agenda commissions — TODO
+  ANNUAIRE-002 Organigramme dynamique — TODO
+✅ CITOYEN-003  Notifications publiques — backend
+  AUDIT-002    Export RGPD — TODO
+✅ TABLEAU-001  Tableau de bord maire — backend + frontend
 
 ═══════════════════════════════════════════════════════
    SESSIONS
 ═══════════════════════════════════════════════════════
 
-[2026-03-20] Session init
-  - Création du harness Claude Code (CLAUDE.md, .claude/settings.json)
-  - Exploration complète du projet
-  - Fix 2 bugs critiques (localStorage + WebSocket presence)
-  - Mise en place agents @pm / @dev / @test
-  - Création feature-list.json et claude-progress.txt
+[2026-03-21] Initialisation Oria Mairie
+  - Fork d'Oria vers oria-mairie (même compte GitHub)
+  - Reset DB (contexte propre)
+  - Mise à jour feature-list.json + claude-progress.txt pour le domaine mairie
+  - Scope v1 défini : UI, GED, Agenda, Annuaire, Citoyen, Broadcast, Audit, Tableau
 
-[2026-03-20] Intégration Matrix — Phase 0 (Infrastructure)
-  - Ajout Synapse + synapse_db dans docker-compose.yml
-  - Création matrix/homeserver.yaml (config Synapse)
-  - Création matrix/appservice.yaml (Application Service Oria↔Matrix)
-  - Création matrix/log.config
-  - Génération clé de signature Synapse (synapse_data/oria.local.signing.key)
-  - Variables d'env Matrix ajoutées au service backend
-  - VITE_MATRIX_URL ajouté au service frontend
-  PROCHAINE ÉTAPE → Phase 1 : matrix_service.py + colonnes DB + provisioning au register
+[2026-03-21] Session 2 — Implémentation v1
+  - UI-001 : renommage complet (Commune, Service, Salle, Intercommunalité)
+  - GED-001/002/003 : backend models + routers Délibérations + Arrêtés + flag confidentiel
+  - AGENDA-001 : ConseilMunicipal model + router + frontend ConseilPanel
+  - ANNUAIRE-001 : AgentElu model + router + frontend AnnuairePanel
+  - CITOYEN-002 : Ticket model + router + frontend TicketsPanel
+  - AUDIT-001 : AuditLog model + auto-logging + frontend AuditPanel
+  - TABLEAU-001 : stats agrégées backend + frontend TableauBordMaire
+  - UI-002 : palette institutionnelle #003189 + CSS mairie-panel complet
+  - Navigation "Outils municipaux" dans ChannelPanel
+  - Playwright : 7/7 tests passés
 
-[2026-03-20] Intégration Matrix — Phase 1 (Service FastAPI)
-  - backend/services/matrix_service.py — client HTTP Synapse (provision_user, create_room,
-    invite_to_room, create_dm_room, set_presence, is_synapse_available)
-  - backend/routers/matrix_as.py — callbacks Application Service (transactions, user/room lookup)
-  - backend/models/user.py — +matrix_user_id, +matrix_access_token, +matrix_provisioned
-  - backend/models/building.py — +matrix_room_id sur Room
-  - backend/models/dm.py — +DirectMessageRoom (table dm_rooms)
-  - backend/routers/auth.py — provisioning Matrix au register + retry au login
-  - backend/main.py — +matrix_as router (sans préfixe /api)
-  - backend/requirements.txt — +httpx==0.27.0
-  PROCHAINE ÉTAPE → Phase 2 : create_room Matrix à la création de chaque Room Oria
-
-[2026-03-20] Intégration Matrix — Phase 2 (Provisioning des rooms)
-  - buildings.py : creer_room() → crée une Matrix Room après chaque Room Oria
-  - buildings.py : creer_building() → crée une Matrix Room pour chaque room par défaut
-  - buildings.py : +_mxids_membres_world() helper (récupère les MXID des membres)
-  - buildings.py : creer_room() et creer_building() reçoivent maintenant user=Depends(get_current_user)
-  - worlds.py : get_world() et get_membres() exposent matrix_user_id dans la liste des membres
-  - worlds.py : rejoindre_world() invite le nouvel arrivant dans toutes les Matrix Rooms du world
-  - worlds.py : +_serialise_membres() helper (joint User pour récupérer matrix_user_id)
-  PROCHAINE ÉTAPE → Phase 3 : Frontend — matrix-js-sdk + hooks + remplacement WebSockets
-
-[2026-03-20] Intégration Matrix — Phase 3 (Frontend)
-  Fix préalable :
-  - worlds.py serialise_building() — +matrix_room_id dans les rooms (sans ça le frontend ne savait pas)
-  Nouveaux fichiers :
-  - frontend/src/services/matrixClient.js — singleton (initMatrixClient, startMatrixClient, stopMatrixClient)
-  - frontend/src/hooks/useMatrixRoom.js — messages room Matrix + réactions + suppression
-  - frontend/src/hooks/useMatrixDM.js — DMs Matrix (crée/récupère la DM room)
-  - frontend/src/hooks/useMatrixPresence.js — présence online/offline via User.presence events
-  Fichiers modifiés :
-  - frontend/package.json — +matrix-js-sdk@34
-  - frontend/vite.config.js — polyfills global + node:crypto pour matrix-js-sdk
-  - frontend/src/App.jsx — init Matrix au login, stop à la déconnexion, stockage matrix_user_id/token
-  - frontend/src/components/RoomView.jsx — useMatrixRoom + fallback WS si pas de matrix_room_id
-  - frontend/src/components/DMPanel.jsx — useMatrixDM + fallback WS si pas de matrix_user_id
-  - frontend/src/components/MembersPanel.jsx — useMatrixPresence + fallback WS
-  Stratégie : mode dégradé — si Matrix indisponible ou room non migrée, WebSocket existant prend le relais
-  PROCHAINE ÉTAPE → Phase 4 : Nettoyage (supprimer messages.py, dm.py, presence.py) — après validation
-
-[2026-03-20] Fixes Python 3.9 + Tests Playwright
-  Bugs corrigés :
-  - matrix_service.py : dict | None / str | None → Optional[dict] / Optional[str] (Python 3.9 compat)
-  - matrix_as.py : str | None → Optional[str] (idem)
-  - routers/files.py + main.py : UPLOAD_DIR /app fallback si hors Docker (OSError read-only)
-  - frontend : npm install matrix-js-sdk (paquet non installé)
-  - DB reset : oria.db supprimée + recréée avec nouvelles colonnes Matrix
-  Tests Playwright (résultats) :
-  ✅ Login / Register : OK
-  ✅ Création monde : OK
-  ✅ Création bâtiment + 3 rooms auto (Salon, Cuisine, Bureau)
-  ✅ Chat texte (room Cuisine) : message envoyé, interface présente
-  ✅ Mode WebSocket fallback (Synapse non démarré) : 0 erreur critique
-  ✅ Console navigateur : 0 erreur critique
-  ℹ️  Matrix/E2EE : inactif (normal, Synapse nécessite Docker)
-  ℹ️  LiveKit vocal : inactif (normal, LiveKit nécessite Docker)
-  PROCHAINE ÉTAPE → Phase 4 : ok pour supprimer messages.py, dm.py, presence.py
-
-[2026-03-20] Intégration Matrix — Phase 4 (Nettoyage)
-  Fichiers supprimés :
-  - backend/routers/messages.py (WebSocket + REST messages)
-  - backend/routers/dm.py (WebSocket + REST DM)
-  - backend/routers/presence.py (WebSocket présence)
-  Modifié :
-  - backend/main.py — retrait imports + router registrations messages/dm/presence
-  - frontend/src/components/RoomView.jsx — suppression fallback WS, Matrix only
-  - frontend/src/components/DMPanel.jsx — suppression fallback WS, Matrix only
-  - frontend/src/components/MembersPanel.jsx — suppression fallback WS, Matrix only
-  Résultat : build frontend ✓, backend démarre ✓
-  ⚠️  L'app nécessite désormais Synapse (Docker) pour le chat/DM/présence
-  PROCHAINE ÉTAPE → Phase 5 : E2EE (Olm/Megolm) — optionnel
-
-[2026-03-20] Intégration Matrix — Phase 5 (E2EE Megolm)
-  Frontend :
-  - matrixClient.js — IndexedDBCryptoStore + deviceId persistant par userId
-  - startMatrixClient() : await client.initCrypto() avant startClient()
-  - setGlobalErrorOnUnknownDevices(false) pour éviter blocages sur devices non vérifiés
-  - Fallback gracieux si Synapse indisponible (console.warn, pas de crash)
-  Backend :
-  - buildings.py : create_room() → encrypt=True pour les rooms type texte/mixte
-  - Les rooms vocales ne sont pas chiffrées (pas de messages texte)
-  Build : ✓ 1473 modules, pas d'erreur
-  ℹ️  Activation effective nécessite Docker (Synapse) + clients qui vérifient leurs devices
-
-Features complétées : 14 → mise à jour
-Progression : ~74%
-
-[2026-03-20] NOTIF-001 — Badges messages non lus
-  Nouveaux fichiers :
-  - frontend/src/hooks/useUnreadCounts.js — écoute Room.timeline Matrix, compte par matrix_room_id
-  Fichiers modifiés :
-  - MainLayout.jsx — useUnreadCounts, activeMatrixRoomIds, markAsRead au entrerRoom, prop unreadCounts → ChannelPanel
-  - ChannelPanel.jsx — prop unreadCounts propagée dans BuildingSection, badge .unread-badge affiché si unread > 0
-  - global.css — styles .unread-badge + .has-unread (nom en blanc/gras)
-  Build : ✓ 1474 modules
-  Comportement : badge rouge avec compteur sur les rooms avec messages non lus, disparaît à l'ouverture
-  PROCHAINE ÉTAPE → NOTIF-002 (badge DM) ou POLISH-001 (gestion d'erreurs)
-
-[2026-03-20] NOTIF-002 — Badges DM non lus
-  Nouveaux fichiers :
-  - frontend/src/hooks/useUnreadDMCounts.js — écoute Room.timeline, identifie DM rooms via m.direct, compte par MXID expéditeur
-  Fichiers modifiés :
-  - MainLayout.jsx — useUnreadDMCounts, markDMAsRead au ouvrirDM, dmUnreadTotal → ChannelPanel, dmUnreadByMxid → MembersPanel
-  - ChannelPanel.jsx — badge total sur bouton 👥 Membres
-  - MembersPanel.jsx — badge par membre sur bouton ✉ DM
-  Build : ✓ 1475 modules
-  PROCHAINE ÉTAPE → POLISH-001 (gestion d'erreurs frontend)
-
-[2026-03-20] POLISH-001 — Gestion d'erreurs frontend
-  Fichiers modifiés :
-  - services/api.js — wrapper request() centralisé : try/catch réseau (TypeError → "Serveur inaccessible"),
-    HTTP non-ok → lit body.detail, dispatch window CustomEvent 'oria:error' dans tous les cas
-  Nouveaux fichiers :
-  - components/Toast.jsx — écoute 'oria:error', empile les toasts (auto-dismiss 4s, bouton ✕)
-  - styles/global.css — styles .toast-container / .toast / animation toast-in
-  Modifié :
-  - MainLayout.jsx — <Toast /> monté globalement
-  Build : ✓ 1476 modules
-  Comportement : toute erreur réseau ou HTTP affiche un toast rouge en bas à droite, 0 crash silencieux
-  PROCHAINE ÉTAPE → POLISH-002 (reconnexion Matrix auto) ou SETTINGS-001
-
-[2026-03-20] POLISH-002 — Reconnexion Matrix automatique
-  Fichiers modifiés :
-  - matrixClient.js — listener 'sync' permanent : dispatch 'oria:matrix-status' à chaque changement d'état
-  Nouveaux fichiers :
-  - SyncStatus.jsx — bannière jaune + spinner sur états ERROR/RECONNECTING, disparaît dès SYNCING
-  - global.css — .sync-status-banner / .sync-spinner / @keyframes spin
-  Modifié :
-  - MainLayout.jsx — <SyncStatus /> monté globalement
-  Build : ✓ 1477 modules
-  Comportement : la bannière "Reconnexion…" apparaît si Synapse coupe, disparaît quand le sync reprend
-  PROCHAINE ÉTAPE → SETTINGS-001 ou POLISH-003
-
-[2026-03-20] SETTINGS-001 — Paramètres utilisateur
-  Backend :
-  - auth.py — PATCH /api/auth/me : modifie nom + avatar_emoji, retourne nouveau token JWT
-  Frontend :
-  - SettingsModal.jsx — grille emoji + champ nom + bouton sauvegarder + bouton déconnecter
-  - WorldSidebar.jsx — moi-btn ouvre SettingsModal (prop onSettings) au lieu de déconnecter
-  - MainLayout.jsx — state showSettings, prop onMoiUpdate reçue, SettingsModal monté
-  - App.jsx — onMoiUpdate={setMoi} passé à MainLayout
-  - global.css — .btn-primary, .btn-danger, .avatar-grid, .avatar-option
-  Build : ✓ 1478 modules
-  Progression : 19/19 features = 100% ✅
-  PROCHAINE ÉTAPE → POLISH-003 (refresh token JWT, LOW) ou livraison
-
-[2026-03-20] POLISH-003 — Refresh token JWT automatique
-  Backend :
-  - auth.py — POST /api/auth/refresh : valide le token courant, retourne un nouveau JWT 30j
-  Frontend :
-  - App.jsx — useEffect au montage : si token expire dans < 7 jours, appel silencieux à /refresh,
-    update localStorage + state moi. Pas de déconnexion si le refresh échoue.
-  Build : ✓
-
-═══════════════════════════════════════════════════════
-   PROJET TERMINÉ — 20/20 features ✅ (100%)
-═══════════════════════════════════════════════════════
-
-[2026-03-20] DOCS — Gestion de documents multi-niveaux (world + building)
-  Backend :
-  - models/building.py — File.room_id nullable, +building_id, +world_id, relation Building↔File
-  - main.py — _migrate() : ALTER TABLE files ADD COLUMN building_id / world_id au démarrage
-  - routers/files.py — +POST /upload/building/{id}, +GET /building/{id},
-                        +POST /upload/world/{id}, +GET /world/{id}
-                        GET /room/{id} expose maintenant uploaded_by
-  Frontend :
-  - DocumentsPanel.jsx — panel réutilisable (liste + upload + téléchargement + suppression)
-                          scope = 'world' | 'building', styles dédiés
-  - ChannelPanel.jsx — bouton 📁 dans le header monde + bouton 📁 sur chaque bâtiment
-  - MainLayout.jsx — state docsScope, rendu DocumentsPanel dans la zone principale
-  Build : ✓ 1479 modules

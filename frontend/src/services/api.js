@@ -38,4 +38,15 @@ export const api = {
   post:  (path, body)  => request(path, { method: 'POST',  body: JSON.stringify(body) }),
   patch: (path, body)  => request(path, { method: 'PATCH', body: JSON.stringify(body) }),
   del:   (path)        => request(path, { method: 'DELETE' }),
+  upload: (path, formData) => {
+    const token = localStorage.getItem('oria_token')
+    const headers = {}
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    return fetch(`${BASE}/api${path}`, { method: 'POST', headers, body: formData })
+      .then(async r => {
+        if (!r.ok) { const b = await r.json().catch(() => ({})); notifyError(b.detail || `Erreur ${r.status}`); return null }
+        return r.json()
+      })
+      .catch(() => { notifyError('Erreur upload'); return null })
+  },
 }

@@ -1,7 +1,7 @@
 export default function WorldSidebar({ worlds, worldActifId, moi, onSelectWorld, onCreerWorld, onDeconnexion, onNetwork, showNetwork, onSettings }) {
   return (
     <div className="sidebar">
-      <div className="sidebar-logo">🌍</div>
+      <div className="sidebar-logo">🏛</div>
       <div className="sidebar-divider" />
 
       <div className="sidebar-worlds">
@@ -19,18 +19,18 @@ export default function WorldSidebar({ worlds, worldActifId, moi, onSelectWorld,
         ))}
       </div>
 
-      <button className="world-btn add" onClick={onCreerWorld} title="Créer un monde">
+      <button className="world-btn add" onClick={onCreerWorld} title="Créer une commune">
         <span>＋</span>
-        <span className="world-btn-tooltip">Nouveau monde</span>
+        <span className="world-btn-tooltip">Nouvelle commune</span>
       </button>
 
       <button
         className={`world-btn network-btn ${showNetwork ? 'actif' : ''}`}
         onClick={onNetwork}
-        title="Réseau de mondes"
+        title="Intercommunalité"
       >
-        <span>🕸</span>
-        <span className="world-btn-tooltip">Réseau</span>
+        <span>🏘</span>
+        <span className="world-btn-tooltip">Intercommunalité</span>
       </button>
 
       <div className="sidebar-bottom">

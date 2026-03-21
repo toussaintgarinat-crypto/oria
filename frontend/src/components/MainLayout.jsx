@@ -11,6 +11,13 @@ import Toast from './Toast.jsx'
 import SyncStatus from './SyncStatus.jsx'
 import SettingsModal from './SettingsModal.jsx'
 import DocumentsPanel from './DocumentsPanel.jsx'
+import DeliberationsPanel from './DeliberationsPanel.jsx'
+import ArretesPanel from './ArretesPanel.jsx'
+import ConseilPanel from './ConseilPanel.jsx'
+import AnnuairePanel from './AnnuairePanel.jsx'
+import TicketsPanel from './TicketsPanel.jsx'
+import AuditPanel from './AuditPanel.jsx'
+import TableauBordMaire from './TableauBordMaire.jsx'
 import { useUnreadCounts } from '../hooks/useUnreadCounts.js'
 import { useUnreadDMCounts } from '../hooks/useUnreadDMCounts.js'
 
@@ -25,6 +32,7 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
   const [showNetwork, setShowNetwork]       = useState(false)
   const [showSettings, setShowSettings]     = useState(false)
   const [docsScope, setDocsScope]           = useState(null) // { type, id, nom }
+  const [outilActif, setOutilActif]         = useState(null) // 'deliberations' | 'arretes' | 'conseil' | 'annuaire' | 'tickets' | 'audit' | 'tableau'
 
   const resizeRef = useRef(null) // { index, startX, startWidths, containerWidth }
 
@@ -60,6 +68,7 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
     setShowMembers(false)
     setDmDestinataire(null)
     setDocsScope(null)
+    setOutilActif(null)
     markAsRead(room.matrix_room_id)
     setRoomsOuvertes(prev => {
       if (prev.find(r => r.room.id === room.id)) return prev
@@ -80,6 +89,13 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
   function ouvrirMembers() {
     setShowMembers(true)
     setDmDestinataire(null)
+  }
+
+  function ouvrirOutil(outil) {
+    setOutilActif(outil)
+    setShowMembers(false)
+    setDmDestinataire(null)
+    setDocsScope(null)
   }
 
   function ouvrirDM(membre) {
@@ -164,6 +180,20 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
         onFermer={() => setDocsScope(null)}
       />
     )
+  } else if (outilActif === 'deliberations') {
+    contenuPrincipal = <DeliberationsPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (outilActif === 'arretes') {
+    contenuPrincipal = <ArretesPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (outilActif === 'conseil') {
+    contenuPrincipal = <ConseilPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (outilActif === 'annuaire') {
+    contenuPrincipal = <AnnuairePanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (outilActif === 'tickets') {
+    contenuPrincipal = <TicketsPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (outilActif === 'audit') {
+    contenuPrincipal = <AuditPanel world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
+  } else if (outilActif === 'tableau') {
+    contenuPrincipal = <TableauBordMaire world={worldActif} moi={moi} onFermer={() => setOutilActif(null)} />
   } else if (dmDestinataire) {
     contenuPrincipal = (
       <DMPanel world={worldActif} moi={moi} destinataire={dmDestinataire} onFermer={() => setDmDestinataire(null)} />
@@ -202,12 +232,12 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
           <>
             <span className="main-welcome-emoji">{worldActif.emoji}</span>
             <h2>{worldActif.nom}</h2>
-            <p>Sélectionne un salon dans le panel de gauche</p>
+            <p>Sélectionne une salle dans le panel de gauche</p>
           </>
         ) : (
           <>
             <span className="main-welcome-emoji">🌍</span>
-            <p>Crée ou rejoins un monde pour commencer</p>
+            <p>Crée ou rejoins une commune pour commencer</p>
           </>
         )}
       </div>
@@ -244,6 +274,7 @@ export default function MainLayout({ moi, onMoiUpdate, onDeconnexion }) {
             setShowMembers(false)
             setDmDestinataire(null)
           }}
+          onOuvrirOutil={ouvrirOutil}
         />
       )}
 

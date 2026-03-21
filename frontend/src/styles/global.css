@@ -1644,3 +1644,470 @@ input  { font-family: inherit; }
 }
 .document-item:hover .btn-suppr-doc { opacity: 1; }
 .btn-suppr-doc:hover { color: #ed4245; }
+
+/* ── Outils municipaux (ChannelPanel) ────────────────────────── */
+.channel-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: #96989d;
+  padding: 16px 12px 4px;
+}
+.channel-outils {
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.channel-outil-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: #96989d;
+  border-radius: 4px;
+  font-size: 13px;
+  text-align: left;
+  width: 100%;
+  transition: background .1s, color .1s;
+}
+.channel-outil-btn:hover {
+  background: #35373c;
+  color: #dcddde;
+}
+
+/* ── Panneau mairie générique ─────────────────────────────────── */
+.mairie-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #313338;
+  overflow: hidden;
+}
+.mairie-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #1e1f22;
+  flex-shrink: 0;
+}
+.mairie-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mairie-panel-title span { font-size: 22px; }
+.mairie-panel-title h2 { font-size: 18px; font-weight: 700; color: #f2f3f5; margin: 0; }
+.mairie-panel-actions { display: flex; gap: 8px; align-items: center; }
+
+.mairie-btn-primary {
+  background: #003189;
+  color: #fff;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.mairie-btn-primary:hover { background: #1a6fc4; }
+.mairie-btn-primary:disabled { background: #4e5058; cursor: not-allowed; }
+
+.mairie-btn-close {
+  background: none;
+  border: none;
+  color: #96989d;
+  font-size: 18px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.mairie-btn-close:hover { background: #35373c; color: #dcddde; }
+
+/* Filtres */
+.mairie-filters {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #1e1f22;
+  flex-shrink: 0;
+}
+.mairie-filter-btn {
+  background: #2b2d31;
+  border: 1px solid #4e5058;
+  color: #96989d;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.mairie-filter-btn:hover { background: #35373c; color: #dcddde; }
+.mairie-filter-btn.actif { background: #003189; border-color: #003189; color: #fff; }
+
+/* Liste */
+.mairie-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mairie-empty {
+  color: #72767d;
+  text-align: center;
+  padding: 40px;
+  font-style: italic;
+}
+
+/* Cards */
+.mairie-card {
+  background: #2b2d31;
+  border: 1px solid #1e1f22;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color .15s;
+}
+.mairie-card:hover { border-color: #4e5058; }
+.mairie-ticket-card { cursor: pointer; }
+.mairie-ticket-card:hover { border-color: #003189; }
+
+.mairie-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mairie-card-numero {
+  font-weight: 700;
+  color: #f2f3f5;
+  font-size: 13px;
+  font-family: monospace;
+}
+.mairie-card-statut, .mairie-card-type { font-size: 12px; font-weight: 600; }
+.mairie-card-meta-inline { font-size: 12px; color: #96989d; }
+.mairie-badge-confidentiel {
+  background: #f04747;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.mairie-card-titre {
+  font-size: 14px;
+  color: #dcddde;
+  font-weight: 500;
+}
+.mairie-card-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #72767d;
+  flex-wrap: wrap;
+}
+.mairie-card-objet {
+  font-size: 12px;
+  color: #96989d;
+}
+.mairie-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.mairie-btn-pdf {
+  font-size: 12px;
+  background: #1e1f22;
+  color: #dcddde;
+  border: 1px solid #4e5058;
+  padding: 3px 10px;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s;
+}
+.mairie-btn-pdf:hover { background: #313338; }
+.mairie-btn-pdf-upload {
+  font-size: 12px;
+  background: #1e1f22;
+  color: #dcddde;
+  border: 1px solid #4e5058;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.mairie-btn-pdf-upload:hover { background: #313338; }
+.mairie-card-admin-btns {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.mairie-card-admin-btns button {
+  background: none;
+  border: none;
+  color: #72767d;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.mairie-card-admin-btns button:hover { background: #35373c; color: #dcddde; }
+.mairie-card-odj pre {
+  font-family: inherit;
+  font-size: 12px;
+  color: #96989d;
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+}
+.mairie-ticket-type { font-size: 12px; font-weight: 600; }
+
+/* Annuaire grid */
+.mairie-annuaire-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+.mairie-agent-card {
+  background: #2b2d31;
+  border: 1px solid #1e1f22;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  position: relative;
+  transition: border-color .15s;
+}
+.mairie-agent-card:hover { border-color: #4e5058; }
+.mairie-agent-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.mairie-agent-info { flex: 1; min-width: 0; }
+.mairie-agent-nom { font-weight: 700; color: #f2f3f5; font-size: 14px; }
+.mairie-agent-fonction { font-size: 12px; color: #96989d; margin-top: 2px; }
+.mairie-agent-service { font-size: 12px; color: #72767d; margin-top: 2px; }
+.mairie-agent-contact { font-size: 11px; color: #72767d; }
+.mairie-agent-type-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.mairie-agent-btns {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  margin-left: 0 !important;
+}
+
+/* Prochain conseil banner */
+.mairie-prochain-conseil {
+  background: #1e3a5f;
+  color: #a8c8f0;
+  padding: 10px 16px;
+  font-size: 13px;
+  border-left: 3px solid #003189;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Modal */
+.mairie-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.mairie-modal {
+  background: #2b2d31;
+  border: 1px solid #1e1f22;
+  border-radius: 10px;
+  padding: 24px;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mairie-modal h3 { color: #f2f3f5; font-size: 16px; margin: 0; }
+.mairie-modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #96989d;
+}
+.mairie-modal input, .mairie-modal select, .mairie-modal textarea {
+  background: #1e1f22;
+  border: 1px solid #4e5058;
+  color: #dcddde;
+  padding: 7px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+}
+.mairie-modal input:focus, .mairie-modal select:focus, .mairie-modal textarea:focus {
+  outline: none;
+  border-color: #003189;
+}
+.mairie-modal-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.mairie-modal-btns button:last-child {
+  background: none;
+  border: 1px solid #4e5058;
+  color: #96989d;
+  padding: 7px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.mairie-modal-btns button:last-child:hover { background: #35373c; color: #dcddde; }
+.mairie-checkbox-label {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+  cursor: pointer;
+  color: #dcddde !important;
+}
+.mairie-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.mairie-modal-header button {
+  background: none;
+  border: none;
+  color: #96989d;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.mairie-modal-header button:hover { background: #35373c; color: #dcddde; }
+
+/* Ticket detail modal */
+.mairie-ticket-detail { width: 580px; }
+.mairie-ticket-info { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #dcddde; }
+.mairie-ticket-info p { margin: 0; }
+.mairie-ticket-statut-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.mairie-ticket-reponse-existante {
+  background: #1e3a2f;
+  border: 1px solid #2d6a4f;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #a8d5b5;
+}
+.mairie-ticket-reponse-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mairie-ticket-reponse-form textarea {
+  background: #1e1f22;
+  border: 1px solid #4e5058;
+  color: #dcddde;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
+/* Audit */
+.mairie-audit-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mairie-audit-row {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: #2b2d31;
+  border: 1px solid #1e1f22;
+}
+.mairie-audit-icon { font-size: 16px; flex-shrink: 0; }
+.mairie-audit-content { flex: 1; }
+.mairie-audit-action { font-weight: 600; color: #dcddde; }
+.mairie-audit-details { color: #96989d; }
+.mairie-audit-meta { display: flex; gap: 10px; color: #72767d; margin-top: 2px; }
+
+/* Tableau de bord */
+.mairie-tableau-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px;
+  flex-shrink: 0;
+}
+.mairie-kpi-card {
+  background: #1e3a5f;
+  border: 1px solid #003189;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.mairie-kpi-value { font-size: 32px; font-weight: 700; color: #a8c8f0; }
+.mairie-kpi-label { font-size: 12px; color: #7ab3e0; margin-top: 4px; }
+.mairie-tableau-section {
+  padding: 0 16px 16px;
+  border-top: 1px solid #1e1f22;
+  padding-top: 14px;
+}
+.mairie-tableau-section h3 { font-size: 14px; color: #f2f3f5; margin: 0 0 10px; }
+.mairie-tableau-delibs { display: flex; gap: 12px; flex-wrap: wrap; }
+.mairie-delib-stat {
+  background: #2b2d31;
+  border: 1px solid #1e1f22;
+  border-radius: 6px;
+  padding: 8px 14px;
+  text-align: center;
+  min-width: 70px;
+}
+.mairie-delib-count { display: block; font-size: 22px; font-weight: 700; color: #f2f3f5; }
+.mairie-delib-label { font-size: 11px; color: #72767d; }
+.mairie-kpi-inline { font-size: 14px; color: #dcddde; }

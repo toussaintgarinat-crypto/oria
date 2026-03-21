@@ -12,11 +12,11 @@ const TYPE_COLORS = {
 }
 
 const TYPE_LABELS = {
-  filiale:     'Filiale',
+  filiale:     'Commune membre',
   partenaire:  'Partenaire',
-  client:      'Client',
-  fournisseur: 'Fournisseur',
-  association: 'Association',
+  client:      'Contractant',
+  fournisseur: 'Prestataire',
+  association: 'EPCI / Groupement',
 }
 
 export default function NetworkView({ moi, onOuvrirWorld }) {
@@ -139,7 +139,7 @@ export default function NetworkView({ moi, onOuvrirWorld }) {
   return (
     <div className="network-view">
       <div className="network-header">
-        <span className="network-titre">🕸 Réseau de mondes</span>
+        <span className="network-titre">🕸 Intercommunalité</span>
         <div className="network-actions">
           <button className={`btn-vue ${vue === 'graph' ? 'actif' : ''}`} onClick={() => setVue('graph')}>Graphe</button>
           <button className={`btn-vue ${vue === 'liste' ? 'actif' : ''}`} onClick={() => setVue('liste')}>Liste</button>
@@ -201,7 +201,7 @@ export default function NetworkView({ moi, onOuvrirWorld }) {
       {vue === 'liste' && (
         <div className="network-liste">
           {graphData.links.length === 0 && (
-            <div className="network-vide">Aucun lien. Connecte des mondes avec "+ Lien".</div>
+            <div className="network-vide">Aucun lien. Reliez des communes avec "+ Lien".</div>
           )}
           {graphData.links.map(lien => {
             const from = graphData.nodes.find(n => n.id === (lien.source?.id ?? lien.source))

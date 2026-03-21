@@ -93,7 +93,7 @@ export default function DocumentsPanel({ scope, scopeId, scopeNom, moi, onFermer
           <div className="documents-vide">
             <span>📂</span>
             <p>Aucun document</p>
-            <p className="documents-vide-hint">Ajoute des fichiers partagés pour ce {scope === 'world' ? 'monde' : 'bâtiment'}</p>
+            <p className="documents-vide-hint">Ajoute des fichiers partagés pour ce {scope === 'world' ? 'commune' : 'service'}</p>
           </div>
         )}
         {fichiers.map(f => (
