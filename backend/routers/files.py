@@ -8,13 +8,16 @@ from datetime import datetime
 import uuid, os, shutil
 
 router = APIRouter()
-_default_upload = "/app/uploads"
-try:
-    os.makedirs(_default_upload, exist_ok=True)
-    UPLOAD_DIR = _default_upload
-except OSError:
-    UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+for _candidate in ["/app/uploads", "/tmp/uploads",
+                   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))]:
+    try:
+        os.makedirs(_candidate, exist_ok=True)
+        UPLOAD_DIR = _candidate
+        break
+    except OSError:
+        continue
+else:
+    UPLOAD_DIR = "/tmp/uploads"
 
 @router.post("/upload/{room_id}")
 async def upload_file(room_id: str, file: UploadFile = FastAPIFile(...),
