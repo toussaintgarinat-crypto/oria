@@ -23,14 +23,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_default_upload = "/app/uploads"
+for _candidate in ["/app/uploads", "/tmp/uploads",
+                   os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))]:
+    try:
+        os.makedirs(_candidate, exist_ok=True)
+        UPLOAD_DIR = _candidate
+        break
+    except OSError:
+        continue
+else:
+    UPLOAD_DIR = "/tmp/uploads"
+
 try:
-    os.makedirs(_default_upload, exist_ok=True)
-    UPLOAD_DIR = _default_upload
-except OSError:
-    UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+except Exception:
+    pass
 
 app.include_router(auth.router,            prefix="/api/auth",        tags=["Auth"])
 app.include_router(worlds.router,          prefix="/api/worlds",      tags=["Worlds"])
