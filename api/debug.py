@@ -1,21 +1,36 @@
 from fastapi import FastAPI
-import os
+import sys, os
 
 app = FastAPI()
 
 @app.get("/api/debug")
 def debug():
-    url = os.getenv("DATABASE_URL", "NOT SET")
-    # Masque le mot de passe mais montre la structure
-    safe_url = url
-    if "://" in url and "@" in url:
-        scheme = url.split("://")[0]
-        rest = url.split("@", 1)[1]  # tout après le @
-        safe_url = f"{scheme}://***:***@{rest}"
+    backend_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'backend'))
+    sys.path.insert(0, backend_path)
 
-    return {
-        "DATABASE_URL_set": url != "NOT SET",
-        "DATABASE_URL_structure": safe_url,
-        "starts_with_postgresql": url.startswith("postgresql"),
-        "length": len(url),
-    }
+    results = []
+
+    try:
+        import database
+        results.append("database import: OK")
+    except Exception as e:
+        results.append(f"database import: FAIL — {e}")
+        return {"results": results}
+
+    try:
+        from sqlalchemy import text
+        from database import SessionLocal
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        results.append("db connection: OK")
+    except Exception as e:
+        results.append(f"db connection: FAIL — {e}")
+
+    try:
+        import main
+        results.append("main import: OK")
+    except Exception as e:
+        results.append(f"main import: FAIL — {e}")
+
+    return {"results": results}
