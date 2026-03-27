@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from typing import List
 from database import get_db
 from models.building import Building, Room
 from models.world import Member
 from models.user import User
+from models.abonnement import RoomAbonnement
 from routers.auth import get_current_user
 import uuid
 import services.matrix_service as matrix
@@ -39,11 +41,13 @@ class CreerBuilding(BaseModel):
     quartier_id: str = ""
 
 class CreerRoom(BaseModel):
-    building_id: str
-    nom:         str
-    type:        str = "mixte"
-    etage:       int = 0
-    emoji:       str = "💬"
+    building_id:          str
+    nom:                  str
+    type:                 str       = "mixte"
+    etage:                int       = 0
+    emoji:                str       = "💬"
+    acces_restreint:      str       = "libre"   # libre | cadenas | cache
+    abonnements_requis_ids: List[str] = []
 
 class UpdateBuilding(BaseModel):
     nom:         str = ""
@@ -52,9 +56,30 @@ class UpdateBuilding(BaseModel):
     couleur:     str = ""
 
 class UpdateRoom(BaseModel):
-    nom:   str = ""
-    type:  str = ""
-    emoji: str = ""
+    nom:                    str       = ""
+    type:                   str       = ""
+    emoji:                  str       = ""
+    acces_restreint:        str       = ""
+    abonnements_requis_ids: List[str] = None
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _serialise_room(r: Room) -> dict:
+    abonnements = [
+        {"id": ra.abonnement.id, "nom": ra.abonnement.nom, "couleur": ra.abonnement.couleur}
+        for ra in r.abonnements_requis
+    ]
+    return {
+        "id":                 r.id,
+        "nom":                r.nom,
+        "type":               r.type,
+        "etage":              r.etage,
+        "emoji":              r.emoji,
+        "matrix_room_id":     r.matrix_room_id,
+        "acces_restreint":    r.acces_restreint,
+        "abonnements_requis": abonnements,
+    }
+
 
 # ── Rooms (avant /{building_id} pour éviter conflits) ────────────────────────
 
@@ -68,9 +93,21 @@ def _mxids_membres_world(world_id: str, db: Session) -> list[str]:
 
 @router.post("/rooms")
 def creer_room(data: CreerRoom, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    room = Room(id=str(uuid.uuid4()), **data.model_dump())
+    room = Room(
+        id=str(uuid.uuid4()),
+        building_id=data.building_id,
+        nom=data.nom,
+        type=data.type,
+        etage=data.etage,
+        emoji=data.emoji,
+        acces_restreint=data.acces_restreint,
+    )
     db.add(room)
     db.flush()
+
+    # Lier les abonnements requis
+    for abonnement_id in (data.abonnements_requis_ids or []):
+        db.add(RoomAbonnement(room_id=room.id, abonnement_id=abonnement_id))
 
     # Créer la Matrix Room correspondante
     building = db.query(Building).filter(Building.id == data.building_id).first()
@@ -91,20 +128,25 @@ def creer_room(data: CreerRoom, db: Session = Depends(get_db), user=Depends(get_
 
     db.commit()
     db.refresh(room)
-    return {"id": room.id, "nom": room.nom, "type": room.type, "etage": room.etage,
-            "emoji": room.emoji, "matrix_room_id": room.matrix_room_id}
+    return _serialise_room(room)
 
 @router.patch("/rooms/{room_id}")
 def modifier_room(room_id: str, data: UpdateRoom, db: Session = Depends(get_db), user=Depends(get_current_user)):
     r = db.query(Room).filter(Room.id == room_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Pièce introuvable")
-    if data.nom:   r.nom   = data.nom
-    if data.type:  r.type  = data.type
-    if data.emoji: r.emoji = data.emoji
+    if data.nom:            r.nom            = data.nom
+    if data.type:           r.type           = data.type
+    if data.emoji:          r.emoji          = data.emoji
+    if data.acces_restreint: r.acces_restreint = data.acces_restreint
+    if data.abonnements_requis_ids is not None:
+        # Remplacer tous les abonnements requis
+        db.query(RoomAbonnement).filter(RoomAbonnement.room_id == r.id).delete()
+        for abonnement_id in data.abonnements_requis_ids:
+            db.add(RoomAbonnement(room_id=r.id, abonnement_id=abonnement_id))
     db.commit()
     db.refresh(r)
-    return {"id": r.id, "nom": r.nom, "type": r.type, "emoji": r.emoji, "etage": r.etage}
+    return _serialise_room(r)
 
 @router.delete("/rooms/{room_id}")
 def supprimer_room(room_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):

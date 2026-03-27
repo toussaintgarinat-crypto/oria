@@ -7,6 +7,7 @@ import EditBuildingModal from './EditBuildingModal.jsx'
 import EditRoomModal from './EditRoomModal.jsx'
 import EditQuartierModal from './EditQuartierModal.jsx'
 import InviteModal from './InviteModal.jsx'
+import AbonnementsModal from './AbonnementsModal.jsx'
 
 export default function ChannelPanel({
   world, moi, roomActiveIds, unreadCounts, dmUnreadTotal,
@@ -21,7 +22,8 @@ export default function ChannelPanel({
   const [editBuilding, setEditBuilding]   = useState(null)
   const [editRoom, setEditRoom]           = useState(null)
   const [editQuartier, setEditQuartier]   = useState(null)
-  const [showInvite, setShowInvite]       = useState(false)
+  const [showInvite, setShowInvite]           = useState(false)
+  const [showAbonnements, setShowAbonnements] = useState(false)
 
   const estProprietaire = world?.owner_id === moi?.id
 
@@ -70,6 +72,9 @@ export default function ChannelPanel({
         <div className="channel-panel-header-actions">
           {estProprietaire && (
             <button className="channel-panel-icon-btn" onClick={() => setShowInvite(true)} title="Inviter">✉</button>
+          )}
+          {estProprietaire && (
+            <button className="channel-panel-icon-btn" onClick={() => setShowAbonnements(true)} title="Gérer les abonnements">💳</button>
           )}
           <button
             className="channel-panel-icon-btn"
@@ -218,7 +223,7 @@ export default function ChannelPanel({
           onFermer={() => setCreerQuartier(false)} />
       )}
       {addRoomBuilding && (
-        <AddRoomModal building={addRoomBuilding}
+        <AddRoomModal building={addRoomBuilding} worldId={world.id}
           onCree={() => { setAddRoomBuilding(null); onWorldMisAJour() }}
           onFermer={() => setAddRoomBuilding(null)} />
       )}
@@ -228,9 +233,12 @@ export default function ChannelPanel({
           onFermer={() => setEditBuilding(null)} />
       )}
       {editRoom && (
-        <EditRoomModal room={editRoom}
+        <EditRoomModal room={editRoom} worldId={world.id}
           onSave={() => { setEditRoom(null); onWorldMisAJour() }}
           onFermer={() => setEditRoom(null)} />
+      )}
+      {showAbonnements && (
+        <AbonnementsModal world={world} onFermer={() => setShowAbonnements(false)} />
       )}
       {editQuartier && (
         <EditQuartierModal quartier={editQuartier}
@@ -304,14 +312,23 @@ function BuildingSection({
       {!isCollapsed && (
         <div className="channel-rooms">
           {rooms.map(room => {
-            const icone = room.type === 'vocal' ? '🔊' : room.type === 'texte' ? '💬' : room.type === 'broadcast' ? '📢' : '⚡'
-            const actif = roomActiveIds?.has(room.id)
-            const unread = room.matrix_room_id ? (unreadCounts?.[room.matrix_room_id] || 0) : 0
+            const icone   = room.type === 'vocal' ? '🔊' : room.type === 'texte' ? '💬' : room.type === 'broadcast' ? '📢' : '⚡'
+            const actif   = roomActiveIds?.has(room.id)
+            const unread  = room.matrix_room_id ? (unreadCounts?.[room.matrix_room_id] || 0) : 0
+            const bloque  = room.acces_restreint === 'cadenas' && room.a_acces === false
             return (
-              <div key={room.id} className={`channel-room-item ${actif ? 'actif' : ''} ${unread > 0 ? 'has-unread' : ''}`}>
-                <button className="channel-room-btn" onClick={() => onEntrerRoom(room)}>
+              <div key={room.id} className={`channel-room-item ${actif ? 'actif' : ''} ${unread > 0 ? 'has-unread' : ''} ${bloque ? 'bloque' : ''}`}>
+                <button
+                  className="channel-room-btn"
+                  onClick={() => bloque ? null : onEntrerRoom(room)}
+                  style={bloque ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                  title={bloque ? `Abonnement requis : ${(room.abonnements_requis || []).map(a => a.nom).join(' ou ')}` : room.nom}
+                >
                   <span className="channel-room-icone">{icone}</span>
                   <span className="channel-room-nom">{room.nom}</span>
+                  {room.acces_restreint && room.acces_restreint !== 'libre' && (
+                    <span style={{ marginLeft: 4, fontSize: 12 }}>{bloque ? '🔒' : '🔓'}</span>
+                  )}
                   {actif && <span className="channel-room-open-dot" />}
                   {unread > 0 && !actif && <span className="unread-badge">{unread > 99 ? '99+' : unread}</span>}
                 </button>

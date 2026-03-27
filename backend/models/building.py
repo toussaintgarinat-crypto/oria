@@ -28,11 +28,13 @@ class Room(Base):
     type        = Column(String, default="mixte")
     etage       = Column(Integer, default=0)
     position    = Column(Integer, default=0)
-    emoji          = Column(String, default="💬")
-    matrix_room_id = Column(String, nullable=True)  # "!xxx:oria.local"
-    building       = relationship("Building", back_populates="rooms")
-    messages       = relationship("Message", back_populates="room", cascade="all, delete")
-    files          = relationship("File", back_populates="room", cascade="all, delete")
+    emoji              = Column(String, default="💬")
+    matrix_room_id     = Column(String, nullable=True)  # "!xxx:oria.local"
+    acces_restreint    = Column(String, default="libre")  # libre | cadenas | cache
+    building           = relationship("Building", back_populates="rooms")
+    messages           = relationship("Message", back_populates="room", cascade="all, delete")
+    files              = relationship("File", back_populates="room", cascade="all, delete")
+    abonnements_requis = relationship("RoomAbonnement", back_populates="room", cascade="all, delete")
 
 class Message(Base):
     __tablename__ = "messages"

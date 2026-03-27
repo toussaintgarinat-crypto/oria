@@ -3,11 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from database import engine, Base
 import models.world, models.building, models.user, models.quartier, models.dm, models.network
+import models.abonnement
 import models.mairie
 import models.vote
 import models.llm_config
 from routers import worlds, buildings, rooms, tokens, auth, quartiers
 from routers import invitations, files as files_router, network as network_router
+from routers import abonnements as abonnements_router
 from routers import matrix_as
 import os
 
@@ -47,7 +49,8 @@ app.include_router(tokens.router,          prefix="/api/tokens",      tags=["Tok
 app.include_router(quartiers.router,       prefix="/api/quartiers",   tags=["Quartiers"])
 app.include_router(invitations.router,     prefix="/api/invitations", tags=["Invitations"])
 app.include_router(files_router.router,    prefix="/api/files",       tags=["Files"])
-app.include_router(network_router.router,  prefix="/api/network",     tags=["Network"])
+app.include_router(network_router.router,      prefix="/api/network",     tags=["Network"])
+app.include_router(abonnements_router.router,  prefix="/api",             tags=["Abonnements"])
 from routers.mairie import (deliberations_router, arretes_router, conseils_router,
     annuaire_router, tickets_router, notifs_router, audit_router, tableau_router)
 app.include_router(deliberations_router, prefix="/api/deliberations", tags=["Délibérations"])

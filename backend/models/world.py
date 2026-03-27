@@ -13,10 +13,11 @@ class World(Base):
     couleur     = Column(String, default="#5865F2")
     owner_id    = Column(String, nullable=False)
     created_at  = Column(DateTime, default=datetime.utcnow)
-    buildings   = relationship("Building", back_populates="world", cascade="all, delete")
-    members     = relationship("Member", back_populates="world", cascade="all, delete")
-    quartiers   = relationship("Quartier", back_populates="world", cascade="all, delete")
-    invitations = relationship("Invitation", back_populates="world", cascade="all, delete")
+    buildings    = relationship("Building", back_populates="world", cascade="all, delete")
+    members      = relationship("Member", back_populates="world", cascade="all, delete")
+    quartiers    = relationship("Quartier", back_populates="world", cascade="all, delete")
+    invitations  = relationship("Invitation", back_populates="world", cascade="all, delete")
+    abonnements  = relationship("Abonnement", back_populates="world", cascade="all, delete")
 
 class Member(Base):
     __tablename__ = "members"
@@ -28,6 +29,7 @@ class Member(Base):
     role         = Column(String, default="membre")  # proprietaire | admin | membre
     joined_at    = Column(DateTime, default=datetime.utcnow)
     world        = relationship("World", back_populates="members")
+    abonnements  = relationship("MembreAbonnement", back_populates="member", cascade="all, delete")
 
 class Invitation(Base):
     __tablename__ = "invitations"

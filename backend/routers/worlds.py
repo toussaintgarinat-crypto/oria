@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from typing import Optional
 from database import get_db
 from models.world import World, Member
 from models.building import Building, Room
+from models.abonnement import MembreAbonnement
 from models.user import User
-from routers.auth import get_current_user
+from routers.auth import get_current_user, SECRET_KEY, ALGORITHM
+from jose import jwt, JWTError
 import uuid
 import services.matrix_service as matrix
 
@@ -39,9 +42,66 @@ def _serialise_membres(membres, db: Session) -> list:
     ]
 
 
-def serialise_building(b):
-    rooms = [{"id": r.id, "nom": r.nom, "type": r.type, "etage": r.etage,
-              "emoji": r.emoji, "matrix_room_id": r.matrix_room_id} for r in b.rooms]
+def get_current_user_optional(authorization: str = Header(None)):
+    """Dépendance optionnelle — retourne None si pas de token valide."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    try:
+        payload = jwt.decode(authorization[7:], SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        return {"id": user_id, "nom": payload.get("nom")} if user_id else None
+    except JWTError:
+        return None
+
+
+def _abonnement_ids_membre(world_id: str, user_id: str, db: Session) -> set:
+    """Retourne l'ensemble des abonnement_id actifs d'un membre dans un world."""
+    membre = db.query(Member).filter(Member.world_id == world_id,
+                                     Member.user_id == user_id).first()
+    if not membre:
+        return set()
+    mas = (db.query(MembreAbonnement)
+           .filter(MembreAbonnement.member_id == membre.id,
+                    MembreAbonnement.actif == True)
+           .all())
+    return {ma.abonnement_id for ma in mas}
+
+
+def serialise_room(r, user_abonnement_ids: Optional[set] = None, is_owner: bool = False) -> Optional[dict]:
+    """Sérialise une room. Retourne None si la room est cachée pour cet utilisateur."""
+    requis = [
+        {"id": ra.abonnement.id, "nom": ra.abonnement.nom, "couleur": ra.abonnement.couleur}
+        for ra in r.abonnements_requis
+    ]
+    if is_owner or not requis:
+        a_acces = True
+    else:
+        requis_ids = {ra.abonnement_id for ra in r.abonnements_requis}
+        a_acces = bool(requis_ids & (user_abonnement_ids or set()))
+
+    # Rooms cachées : invisibles pour les non-abonnés
+    if r.acces_restreint == "cache" and not a_acces:
+        return None
+
+    return {
+        "id":                 r.id,
+        "nom":                r.nom,
+        "type":               r.type,
+        "etage":              r.etage,
+        "emoji":              r.emoji,
+        "matrix_room_id":     r.matrix_room_id,
+        "acces_restreint":    r.acces_restreint,
+        "abonnements_requis": requis,
+        "a_acces":            a_acces,
+    }
+
+
+def serialise_building(b, user_abonnement_ids: Optional[set] = None, is_owner: bool = False):
+    rooms = []
+    for r in b.rooms:
+        serialised = serialise_room(r, user_abonnement_ids, is_owner)
+        if serialised is not None:
+            rooms.append(serialised)
     return {"id": b.id, "nom": b.nom, "type": b.type, "emoji": b.emoji,
             "couleur": b.couleur, "description": b.description,
             "quartier_id": b.quartier_id, "rooms": rooms}
@@ -101,15 +161,30 @@ def creer_world(data: CreerWorld, db: Session = Depends(get_db), user=Depends(ge
     return {"id": world.id, "nom": world.nom, "emoji": world.emoji, "couleur": world.couleur}
 
 @router.get("/{world_id}")
-def get_world(world_id: str, db: Session = Depends(get_db)):
+def get_world(world_id: str, db: Session = Depends(get_db),
+              user=Depends(get_current_user_optional)):
     world = db.query(World).filter(World.id == world_id).first()
     if not world:
         return {"erreur": "Monde introuvable"}
-    buildings_libres = [serialise_building(b) for b in world.buildings if b.quartier_id is None]
-    quartiers = [{"id": q.id, "nom": q.nom, "emoji": q.emoji, "couleur": q.couleur,
-                  "description": q.description,
-                  "buildings": [serialise_building(b) for b in q.buildings]}
-                 for q in world.quartiers]
+
+    is_owner = user and world.owner_id == user["id"]
+    user_abonnement_ids = (
+        _abonnement_ids_membre(world_id, user["id"], db)
+        if user and not is_owner else set()
+    )
+
+    buildings_libres = [
+        serialise_building(b, user_abonnement_ids, is_owner)
+        for b in world.buildings if b.quartier_id is None
+    ]
+    quartiers = [
+        {
+            "id": q.id, "nom": q.nom, "emoji": q.emoji, "couleur": q.couleur,
+            "description": q.description,
+            "buildings": [serialise_building(b, user_abonnement_ids, is_owner) for b in q.buildings],
+        }
+        for q in world.quartiers
+    ]
     return {"id": world.id, "nom": world.nom, "description": world.description,
             "emoji": world.emoji, "couleur": world.couleur, "owner_id": world.owner_id,
             "buildings": buildings_libres, "quartiers": quartiers,
